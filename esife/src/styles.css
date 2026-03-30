@@ -1,0 +1,93 @@
+/* You can add global styles to this file, and also import other style files */
+.cabecera {
+    text-align: center;
+    margin-bottom: 25px;
+    font-family: Tahoma;
+    background-color: rgb(1, 94, 1);
+    color: white;
+    padding: 10px;
+}
+
+.btnVerEscenarios {
+    background-color: rgb(107, 208, 107);
+    color: black;
+    padding: 8px 18px;
+    border: none;
+    border-radius: 20px;
+    cursor: pointer;
+    font-family: Tahoma;
+}
+
+
+.lista-contenedor {
+    width: 700px;
+    margin: 0 auto;
+    text-align: center;
+}
+
+.lista-contenedor ol,
+.lista-contenedor ul {
+    padding-left: 25px;
+}
+
+.espectaculos {
+    font-family: Tahoma;
+}
+
+.entradaslibres {
+    color: darkgreen;
+}
+
+.pagos {
+    text-align: center;
+}
+
+.escenarios-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); 
+  gap: 20px;
+  padding: 20px;
+}
+
+.card-escenario {
+  background: white;
+  border-radius: 12px;
+  box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+  overflow: hidden;
+  border: 1px solid #eee;
+  text-align: center;
+}
+
+.card-header {
+  background-color: #f8f9fa;
+  padding: 15px;
+  cursor: pointer;
+  border-bottom: 2px solid #28a745;
+}
+
+.item-espectaculo {
+  padding: 12px;
+  border-bottom: 1px solid #eee;
+  transition: background 0.2s;
+  cursor: pointer;
+}
+
+.item-espectaculo:hover {
+  background-color: #f0f7ff;
+}
+
+.info-artista {
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 8px;
+}
+
+.btn-compra {
+  background: #28a745;
+  color: white;
+  border: none;
+  padding: 5px 10px;
+  border-radius: 5px;
+  cursor: pointer;
+  font-size: 0.9em;
+}

@@ -1,0 +1,31 @@
+<div class="cabecera">
+  <h1>Espectáculos ESI</h1>
+  <button class="btnVerEscenarios" (click)="getEscenarios()">Ver Espectáculos</button>
+</div>
+
+<div class="escenarios-grid">
+  
+  <div class="card-escenario" *ngFor="let escenario of escenarios">
+    <div class="card-header" (click)="getEspectaculos(escenario)">
+      <h2>{{ escenario.nombre }}</h2>
+      <p>{{ escenario.descripcion }}</p>
+    </div>
+
+    <div class="lista-espectaculos">
+      <div class="item-espectaculo" *ngFor="let espectaculo of escenario.espectaculos" (click)="getNumeroDeEntradas(espectaculo)">
+        <div class="info-artista">
+          <strong>{{ espectaculo.artista }}</strong>
+          <span>{{ espectaculo.fecha }}</span>
+        </div>
+
+        <div class="info-entradas" *ngIf="espectaculo.entradas">
+          <p>Total: {{ espectaculo.entradas.total }}</p>
+          <button class="btn-compra" (click)="irAComprarEntradas(); $event.stopPropagation()">
+            {{ espectaculo.entradas.libres }} libres - ¡Comprar!
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+</div>
