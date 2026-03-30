@@ -9,13 +9,13 @@ Importe: <input type="number" [(ngModel)]="importe">
 <button (click)="irAPago()"> Ir al pago </button>
 
 <br>
-<form id="payment-form" style="display:none">
-    <div id="card-element"></div>
-    <button id="submit">
+<form id="payment-form" [hidden]="!showPaymentForm" (submit)="onSubmitPayment($event)">
+    <div #cardElement id="card-element"></div>
+    <button id="submit" type="submit" [disabled]="!isCardReady || isProcessing">
         <div class="spinner hidden" id="spinner"></div>
-        <span id="button-text">Pay now</span>
+        <span id="button-text">{{ isProcessing ? 'Procesando...' : 'Pay now' }}</span>
     </button>
-    <p id="card-error" role="alert"></p>
+    <p id="card-error" role="alert">{{ cardError }}</p>
     <p class="result-message hidden">
         Payment succeeded, see the result in your
         <a href="" target="_blank">Stripe dashboard.</a> Refresh the page to pay again.

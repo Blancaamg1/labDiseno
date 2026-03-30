@@ -20,7 +20,7 @@
 
         <div class="info-entradas" *ngIf="espectaculo.entradas">
           <p>Total: {{ espectaculo.entradas.total }}</p>
-          <button class="btn-compra" (click)="irAComprarEntradas(); $event.stopPropagation()">
+          <button class="btn-compra" (click)="irAComprarEntradas(espectaculo); $event.stopPropagation()">
             {{ espectaculo.entradas.libres }} libres - ¡Comprar!
           </button>
         </div>

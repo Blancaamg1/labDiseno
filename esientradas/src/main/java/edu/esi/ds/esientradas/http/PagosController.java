@@ -8,15 +8,22 @@ import org.springframework.web.bind.annotation.CrossOrigin;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.server.ResponseStatusException;
 
+import edu.esi.ds.esientradas.dto.DtoConfirmarPagoRequest;
+import edu.esi.ds.esientradas.dto.DtoConfirmarPagoResponse;
 import edu.esi.ds.esientradas.services.PagosService;
 
 
 
 @RestController
-@CrossOrigin(origins = "http://localhost:4200")
+@CrossOrigin(
+    origins = "http://localhost:4200",
+    methods = { RequestMethod.POST, RequestMethod.OPTIONS },
+    allowedHeaders = "*"
+)
 @RequestMapping("/pagos")
 public class PagosController {
 
@@ -34,7 +41,14 @@ public class PagosController {
     }
     
     @PostMapping("/confirmarPago")
-    public void confirmarPago(){
+    public DtoConfirmarPagoResponse confirmarPago(@RequestBody DtoConfirmarPagoRequest request){
+        try {
+            return this.service.confirmarPago(request);
+        } catch (ResponseStatusException ex) {
+            throw ex;
+        } catch (Exception ex) {
+            throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, "Error al confirmar el pago", ex);
+        }
 
     }
 

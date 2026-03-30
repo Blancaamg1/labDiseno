@@ -71,7 +71,10 @@ export class Espectaculos {
   );
   } 
 
-  irAComprarEntradas(){
-    this.router.navigate(['/comprar']);
+  irAComprarEntradas(espectaculo: any){
+    // Se pasa el id del espectaculo en la URL para recuperarlo en CompraComponent.
+    this.router.navigate(['/comprar'], {
+      queryParams: { idEspectaculo: espectaculo?.id }
+    });
   }
 }
