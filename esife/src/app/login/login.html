@@ -1,0 +1,37 @@
+<div class="cabecera">
+  <h1>Iniciar sesión</h1>
+</div>
+
+<div class="login-container">
+  <form (ngSubmit)="onSubmit()">
+
+    <div class="form-row">
+      <label for="name">Usuario</label>
+      <input
+        id="name"
+        type="text"
+        [(ngModel)]="name"
+        name="name"
+        required
+      >
+    </div>
+
+    <div class="form-row">
+      <label for="pwd">Contraseña</label>
+      <input
+        id="pwd"
+        type="password"
+        [(ngModel)]="pwd"
+        name="pwd"
+        required
+      >
+    </div>
+
+    <button type="submit" [disabled]="loading">
+      {{ loading ? 'Cargando...' : 'Iniciar sesión' }}
+    </button>
+
+    <p *ngIf="error" class="error">{{ error }}</p>
+
+  </form>
+</div>

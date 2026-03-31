@@ -1,10 +1,17 @@
 <div class="cabecera">
   <h1>Espectáculos ESI</h1>
   <button class="btnVerEscenarios" (click)="getEscenarios()">Ver Espectáculos</button>
+
+
+<div class="inicioSesion">
+  <h1 class="inSes"> Inicia Sesión/Registrate </h1>
+  <button class="btn-login" (click)="login(); $event.stopPropagation()">
+    Iniciar sesión
+  </button>
+</div>
 </div>
 
 <div class="escenarios-grid">
-  
   <div class="card-escenario" *ngFor="let escenario of escenarios">
     <div class="card-header" (click)="getEspectaculos(escenario)">
       <h2>{{ escenario.nombre }}</h2>
@@ -12,7 +19,9 @@
     </div>
 
     <div class="lista-espectaculos">
-      <div class="item-espectaculo" *ngFor="let espectaculo of escenario.espectaculos" (click)="getNumeroDeEntradas(espectaculo)">
+      <div class="item-espectaculo" *ngFor="let espectaculo of escenario.espectaculos"
+           (click)="getNumeroDeEntradas(espectaculo)">
+        
         <div class="info-artista">
           <strong>{{ espectaculo.artista }}</strong>
           <span>{{ espectaculo.fecha }}</span>
@@ -27,5 +36,4 @@
       </div>
     </div>
   </div>
-
 </div>

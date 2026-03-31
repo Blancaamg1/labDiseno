@@ -24,7 +24,7 @@ public class UserService {
                 return "Login successful";
             }
         }
-        return "Invalid credentials";
+        return null;
     }
 
     public String checkToken(String token) {

@@ -1,6 +1,7 @@
 package edu.esi.ds.esientradas.services;
 
 import java.time.LocalDateTime;
+import java.util.List;
 import java.util.Locale;
 import java.util.Optional;
 
@@ -16,20 +17,26 @@ import com.stripe.model.PaymentIntent;
 import com.stripe.param.PaymentIntentCreateParams;
 
 import edu.esi.ds.esientradas.dao.ConfigurationDao;
+import edu.esi.ds.esientradas.dao.EntradaDao;
 import edu.esi.ds.esientradas.dao.PagoDao;
 import edu.esi.ds.esientradas.dto.DtoConfirmarPagoRequest;
 import edu.esi.ds.esientradas.dto.DtoConfirmarPagoResponse;
 import edu.esi.ds.esientradas.model.Configuration;
+import edu.esi.ds.esientradas.model.Entrada;
+import edu.esi.ds.esientradas.model.Estado;
 import edu.esi.ds.esientradas.model.Pago;
 
 
 @Service
 public class PagosService {
 
-    private static final String FALLBACK_STRIPE_SECRET_KEY = "CLAVE";
+    private static final String FALLBACK_STRIPE_SECRET_KEY = "";
 
     @Autowired
     private PagoDao pagoDao;
+
+    @Autowired
+    private EntradaDao entradaDao;
 
     @Autowired
     private PDFService pdfService;
@@ -111,6 +118,7 @@ public class PagosService {
                         : "comprador@pendiente.local"
                 );
 
+                this.reservarEntradas(request.getIdEspectaculo(), pago.getCantidadEntradas());
                 pago = this.pagoDao.save(pago);
             }
 
@@ -156,6 +164,25 @@ public class PagosService {
 
         return FALLBACK_STRIPE_SECRET_KEY;
 
+    }
+
+    private void reservarEntradas(Long idEspectaculo, Integer cantidadSolicitada) {
+        if (idEspectaculo == null) {
+            return;
+        }
+
+        int cantidad = cantidadSolicitada != null && cantidadSolicitada > 0 ? cantidadSolicitada : 1;
+        List<Entrada> entradasDisponibles = this.entradaDao.findByEspectaculoIdAndEstado(idEspectaculo, Estado.DISPONIBLE);
+
+        if (entradasDisponibles.size() < cantidad) {
+            throw new ResponseStatusException(HttpStatus.CONFLICT, "No hay suficientes entradas disponibles para reservar");
+        }
+
+        for (int i = 0; i < cantidad; i++) {
+            entradasDisponibles.get(i).setEstado(Estado.RESERVADA);
+        }
+
+        this.entradaDao.saveAll(entradasDisponibles.subList(0, cantidad));
     }
 
 }

@@ -77,4 +77,10 @@ export class Espectaculos {
       queryParams: { idEspectaculo: espectaculo?.id }
     });
   }
+
+   login() {
+  this.router.navigate(['/login'], {
+    queryParams: { returnUrl: '/' }
+  });
+}
 }
