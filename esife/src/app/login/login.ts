@@ -39,7 +39,7 @@ export class Login {
             localStorage.setItem('loggedUser', this.name);
 
             const returnUrl = this.route.snapshot.queryParamMap.get('returnUrl') || '/';
-            this.router.navigate([returnUrl]);
+            this.router.navigateByUrl(returnUrl);
           } else {
             this.error = 'Credenciales inválidas';
           }

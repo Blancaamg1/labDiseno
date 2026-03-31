@@ -80,7 +80,7 @@ export class Espectaculos {
 
    login() {
   this.router.navigate(['/login'], {
-    queryParams: { returnUrl: '/' }
+    queryParams: { returnUrl: '/espectaculos' }
   });
 }
 }
