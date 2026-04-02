@@ -54,12 +54,12 @@ export class Login {
         const returnUrl = this.route.snapshot.queryParamMap.get('returnUrl') || '/';
         this.router.navigateByUrl(returnUrl);
       } else {
-        this.error = 'Usuario o contraseña incorrectos';
+        this.error = 'Invalid Credentials';
         this.cdr.detectChanges();
       }
     } catch (err: any) {
       if (err?.status === 401) {
-        this.error = 'Usuario o contraseña incorrectos';
+        this.error = 'Invalid Credentials';
       } else if (err?.name === 'TimeoutError') {
         this.error = 'El servidor tarda demasiado en responder';
       } else {

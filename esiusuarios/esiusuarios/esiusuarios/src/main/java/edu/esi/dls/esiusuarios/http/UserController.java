@@ -44,24 +44,97 @@ public class UserController {
     @PostMapping("/register")
     public String register(@RequestBody Map<String, String> credentials){
         JSONObject jsonCredentials = new JSONObject(credentials);
-        String email = jsonCredentials.optString("email");
+        String username = jsonCredentials.optString("username").trim();
+        String email = jsonCredentials.optString("email").trim().toLowerCase();
         String pwd1 = jsonCredentials.optString("pwd1");
         String pwd2 = jsonCredentials.optString("pwd2");
 
-        if(email.isEmpty() || pwd1.isEmpty() || pwd2.isEmpty()){
+        if( username.isEmpty() || email.isEmpty() || pwd1.isEmpty() || pwd2.isEmpty()){
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Invalid credentials");
         }
 
-        if(!pwd1.equals(pwd2)){
-            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Passwords do not match");
+        if(!isValidUsername(username)){
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST,
+                "Los datos proporcionados no son validos.");
         }
-        String result = this.service.register(email, pwd1);
+
+        if(!isValidEmail(email)){
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Los datos proporcionados no son validos.");
+        }
+
+        if(!pwd1.equals(pwd2)){
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Las contrasenias no coinciden.");
+        }
+
+        if(!isStrongPassword(pwd1)){
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST,
+                "Los datos proporcionados no son validos.");
+        }
+
+        String result = this.service.register(username, email, pwd1);
         if(result == null){
-            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "User already exists");
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "No se pudo completar el registro. Los datos proporcionados no son validos.");
         }
 
         return result;
 
+    }
+
+    private boolean isValidUsername(String username) {
+        if (username.length() < 3 || username.length() > 20) {
+            return false;
+        }
+
+        for (char c : username.toCharArray()) {
+            if (Character.isLetterOrDigit(c) || c == '_' || c == '.') {
+                continue;
+            }
+            return false;
+        }
+
+        return true;
+    }
+
+    private boolean isValidEmail(String email) {
+        if (email.contains(" ")) {
+            return false;
+        }
+
+        int atIndex = email.indexOf('@');
+        int lastAtIndex = email.lastIndexOf('@');
+        int dotIndex = email.lastIndexOf('.');
+
+        if (atIndex <= 0 || atIndex != lastAtIndex) {
+            return false;
+        }
+
+        if (dotIndex <= atIndex + 1 || dotIndex >= email.length() - 1) {
+            return false;
+        }
+
+        return true;
+    }
+
+    private boolean isStrongPassword(String password) {
+        if (password.length() < 8) {
+            return false;
+        }
+
+        boolean hasUpper = false;
+        boolean hasLower = false;
+        boolean hasDigit = false;
+
+        for (char c : password.toCharArray()) {
+            if (Character.isUpperCase(c)) {
+                hasUpper = true;
+            } else if (Character.isLowerCase(c)) {
+                hasLower = true;
+            } else if (Character.isDigit(c)) {
+                hasDigit = true;
+            }
+        }
+
+        return hasUpper && hasLower && hasDigit;
     }
 
 

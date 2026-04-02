@@ -1,0 +1,124 @@
+<div class="cabecera">
+	<h1>Crear cuenta</h1>
+</div>
+
+<div class="login-container">
+	<form (ngSubmit)="registrarse()">
+		<div class="form-row">
+			<label for="username">Usuario</label>
+			<input
+				id="username"
+				type="text"
+				[(ngModel)]="username"
+				name="username"
+				autocomplete="username"
+				required
+			>
+		</div>
+
+		<div class="form-row">
+			<label for="email">Email</label>
+			<input
+				id="email"
+				type="email"
+				[(ngModel)]="email"
+				name="email"
+				autocomplete="email"
+				required
+			>
+		</div>
+
+		<div class="form-row">
+			<label for="pwd1">Contrasena</label>
+			<div class="password-wrapper">
+				<input
+					id="pwd1"
+					[type]="mostrarPwd1 ? 'text' : 'password'"
+					(input)="validatePassword($event.target.value)"
+					[ngModel]="pwd1"
+					name="pwd1"
+					autocomplete="new-password"
+					required
+				>
+				<button
+					type="button"
+					class="eye-btn"
+					(click)="togglePwd1()"
+					[attr.aria-pressed]="mostrarPwd1"
+					[attr.aria-label]="mostrarPwd1 ? 'Ocultar contrasena' : 'Mostrar contrasena'"
+				>
+					{{ mostrarPwd1 ? 'Ocultar' : 'Mostrar' }}
+				</button>
+			</div>
+		</div>
+
+		<div *ngIf="pwd1" class="requirements-container">
+			<div class="password-requirements">
+				<p class="requirements-title">Requisitos:</p>
+				<div class="requirement" [class.met]="hasMinLength">
+					<span class="check">{{ hasMinLength ? '✓' : '✕' }}</span>
+					<span class="text">8 caracteres mínimo</span>
+				</div>
+				<div class="requirement" [class.met]="hasUpperCase">
+					<span class="check">{{ hasUpperCase ? '✓' : '✕' }}</span>
+					<span class="text">1 mayúscula (A-Z)</span>
+				</div>
+				<div class="requirement" [class.met]="hasLowerCase">
+					<span class="check">{{ hasLowerCase ? '✓' : '✕' }}</span>
+					<span class="text">1 minúscula (a-z)</span>
+				</div>
+				<div class="requirement" [class.met]="hasDigit">
+					<span class="check">{{ hasDigit ? '✓' : '✕' }}</span>
+					<span class="text">1 número (0-9)</span>
+				</div>
+			</div>
+		</div>
+
+		<div class="form-row">
+			<label for="pwd2">Repetir</label>
+			<div class="password-wrapper">
+				<input
+					id="pwd2"
+					[type]="mostrarPwd2 ? 'text' : 'password'"
+					[(ngModel)]="pwd2"
+					name="pwd2"
+					autocomplete="new-password"
+					required
+				>
+				<button
+					type="button"
+					class="eye-btn"
+					(click)="togglePwd2()"
+					[attr.aria-pressed]="mostrarPwd2"
+					[attr.aria-label]="mostrarPwd2 ? 'Ocultar contrasena' : 'Mostrar contrasena'"
+				>
+					{{ mostrarPwd2 ? 'Ocultar' : 'Mostrar' }}
+				</button>
+			</div>
+		</div>
+
+		<div *ngIf="pwd1 && pwd2" class="requirements-container">
+			<div class="password-match">
+				<div *ngIf="!passwordsMatch()" class="error-small">
+					<span class="error-icon">✕</span>
+					<span class="error-text">Las contraseñas no coinciden</span>
+				</div>
+				<div *ngIf="passwordsMatch()" class="success-small">
+					<span class="success-icon">✓</span>
+					<span class="success-text">Las contraseñas coinciden</span>
+				</div>
+			</div>
+		</div>
+
+		<button
+			class="submit-btn"
+			type="submit"
+			[disabled]="loading || !username || !email || !pwd1 || !pwd2 || !isPasswordValid() || !passwordsMatch()"
+		>
+			{{ loading ? 'Registrando...' : 'Registrarme' }}
+		</button>
+
+		<p *ngIf="error" class="error">{{ error }}</p>
+		<p *ngIf="success" class="success">{{ success }}</p>
+	</form>
+</div>

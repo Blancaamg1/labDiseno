@@ -14,8 +14,8 @@ public class UserService {
 
     public UserService() {
         this.users = new ArrayList<>();
-        this.users.add(new User("Pepe", "pepe123", "1234"));
-        this.users.add(new User("Ana", "ana123", "567"));
+        this.users.add(new User("Pepe", "pepe@example.com", "pepe123", "1234"));
+        this.users.add(new User("Ana", "ana@example.com", "ana123", "567"));
     }
 
     public String login(String name, String password) {
@@ -36,12 +36,22 @@ public class UserService {
         return null;
     }
 
-    public String register(String email, String pwd1) {
-        User newUser = new User(email, pwd1, String.valueOf(this.users.size() + 1));
+    public String register(String username, String email, String pwd1) {
+        for(User user : this.users){
+            if(user.getName().equalsIgnoreCase(username)){
+                return null;
+            }
+
+            if(user.getEmail() != null && user.getEmail().equalsIgnoreCase(email)){
+                return null;
+            }
+        }
+
+        User newUser = new User(username, email, pwd1, String.valueOf(this.users.size() + 1));
         this.users.add(newUser);
         Manager.getInstance().getEmailService().sendEmail(email, 
             "asunto", "Bienvenido a ESIUsuarios",
-            "texto","Bienvenido al sistema, confirma tu registro aqui: http://localhost:8080/users/confirm?token=" + newUser.getToken());
+            "texto","Bienvenido al sistema, confirma tu registro aqui: http://localhost:8081/users/confirm?token=" + newUser.getToken());
 
         return "Le hemos enviado un correo de confirmación a " + email;
     }
