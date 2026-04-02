@@ -12,6 +12,7 @@ import { ActivatedRoute, Router } from '@angular/router';
   styleUrl: './login.css',
 })
 export class Login {
+  mostrarPassword = false;
   name = '';
   pwd = '';
   error = '';
@@ -22,6 +23,10 @@ export class Login {
     private router: Router,
     private route: ActivatedRoute
   ) {}
+  
+  togglePassword() {
+    this.mostrarPassword = !this.mostrarPassword;
+  }
 
   iniciarSesion() {
     this.error = '';

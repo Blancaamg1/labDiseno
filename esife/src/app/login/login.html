@@ -4,7 +4,6 @@
 
 <div class="login-container">
   <form (ngSubmit)="iniciarSesion()">
-
     <div class="form-row">
       <label for="name">Usuario</label>
       <input
@@ -12,26 +11,38 @@
         type="text"
         [(ngModel)]="name"
         name="name"
+        autocomplete="username"
         required
       >
     </div>
 
     <div class="form-row">
       <label for="pwd">Contraseña</label>
-      <input
-        id="pwd"
-        type="password"
-        [(ngModel)]="pwd"
-        name="pwd"
-        required
-      >
+      <div class="password-wrapper">
+        <input
+          id="pwd"
+          [type]="mostrarPassword ? 'text' : 'password'"
+          [(ngModel)]="pwd"
+          name="pwd"
+          autocomplete="current-password"
+          required
+        >
+        <button
+          type="button"
+          class="eye-btn"
+          (click)="togglePassword()"
+          [attr.aria-pressed]="mostrarPassword"
+          [attr.aria-label]="mostrarPassword ? 'Ocultar contraseña' : 'Mostrar contraseña'"
+        >
+          {{ mostrarPassword ? 'Ocultar' : 'Mostrar' }}
+        </button>
+      </div>
     </div>
 
-    <button type="submit" [disabled]="loading">
+    <button class="submit-btn" type="submit" [disabled]="loading || !name || !pwd">
       {{ loading ? 'Cargando...' : 'Iniciar sesión' }}
     </button>
 
     <p *ngIf="error" class="error">{{ error }}</p>
-
   </form>
 </div>

@@ -1,70 +1,116 @@
-/* Cabecera */
 .cabecera {
     text-align: center;
     margin-bottom: 30px;
-    font-family: Tahoma;
+    font-family: Tahoma, sans-serif;
     color: black;
 }
 
-/* Contenedor centrado */
 .login-container {
     display: flex;
     justify-content: center;
 }
 
-/* Formulario */
 form {
-    display: flex;
-    flex-direction: column;
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 16px;
     align-items: center;
     background: white;
     padding: 30px 40px;
     border-radius: 10px;
-    box-shadow: 0 4px 10px rgba(0,0,0,0.2);
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2);
 }
 
-/* Filas de inputs */
 .form-row {
-    display: flex;
+    display: grid;
+    grid-template-columns: 100px 220px;
     align-items: center;
     justify-content: center;
-    margin-bottom: 20px;
     gap: 20px;
 }
 
-/* Labels alineados */
 .form-row label {
-    width: 100px;
     text-align: right;
-    font-family: Tahoma;
+    font-family: Tahoma, sans-serif;
 }
 
-/* Inputs */
 .form-row input {
     border-radius: 5px;
     padding: 6px;
     border: 1px solid #ccc;
-    width: 180px;
+    width: 100%;
+    box-sizing: border-box;
 }
 
-/* Botón */
-button {
-    margin-top: 10px;
+.password-wrapper {
+    position: relative;
+    width: 220px;
+}
+
+.password-wrapper input {
+    padding-right: 72px;
+}
+
+.eye-btn {
+    position: absolute;
+    top: 50%;
+    right: 8px;
+    transform: translateY(-50%);
+    border: 1px solid #cdd4df;
+    background: #f5f7fb;
+    color: #1f2a44;
+    border-radius: 14px;
+    cursor: pointer;
+    padding: 2px 8px;
+    font-size: 12px;
+}
+
+.eye-btn:hover {
+    background: #e8edf7;
+}
+
+.submit-btn {
+    margin-top: 8px;
     background-color: rgb(107, 208, 107);
     color: black;
     padding: 8px 18px;
     border: none;
     border-radius: 20px;
     cursor: pointer;
-    font-family: Tahoma;
+    font-family: Tahoma, sans-serif;
 }
 
-button:hover {
+.submit-btn:hover:not(:disabled) {
     background-color: rgb(90, 180, 90);
 }
 
-/* Error */
+.submit-btn:disabled {
+    opacity: 0.7;
+    cursor: not-allowed;
+}
+
 .error {
     color: red;
-    margin-top: 10px;
+    margin-top: 4px;
+}
+
+@media (max-width: 640px) {
+    form {
+        width: 100%;
+        max-width: 420px;
+        padding: 20px;
+    }
+
+    .form-row {
+        grid-template-columns: 1fr;
+        gap: 8px;
+    }
+
+    .form-row label {
+        text-align: left;
+    }
+
+    .password-wrapper {
+        width: 100%;
+    }
 }
