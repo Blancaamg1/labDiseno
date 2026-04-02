@@ -23,7 +23,7 @@ export class Login {
     private route: ActivatedRoute
   ) {}
 
-  onSubmit() {
+  iniciarSesion() {
     this.error = '';
     this.loading = true;
 
@@ -32,7 +32,7 @@ export class Login {
       pwd: this.pwd
     };
 
-    this.http.post('http://localhost:8080/users/login', payload, { responseType: 'text' })
+    this.http.post('http://localhost:8081/users/login', payload, { responseType: 'text' })
       .subscribe({
         next: (response: string) => {
           if (response === 'Login successful') {
