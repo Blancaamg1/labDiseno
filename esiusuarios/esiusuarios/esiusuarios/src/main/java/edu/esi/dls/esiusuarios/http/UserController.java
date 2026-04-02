@@ -26,7 +26,7 @@ public class UserController {
     @PostMapping("/login")
     public String login(@RequestBody Map<String, String> credentials){
         JSONObject jsonCredentials = new JSONObject(credentials);
-        String name = jsonCredentials.optString("name");
+        String name = jsonCredentials.optString("name").trim();
         String password = jsonCredentials.optString("pwd");
 
         if(name.isEmpty() || password.isEmpty()){

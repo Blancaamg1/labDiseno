@@ -20,7 +20,7 @@ public class UserService {
 
     public String login(String name, String password) {
         for(User user : this.users){
-            if(user.getName().equals(name) && user.getPassword().equals(password)){
+            if(user.getName().equalsIgnoreCase(name) && user.getPassword().equals(password)){
                 return "Login successful";
             }
         }
