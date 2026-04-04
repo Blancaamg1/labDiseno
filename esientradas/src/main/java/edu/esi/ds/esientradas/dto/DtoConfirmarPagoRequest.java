@@ -4,10 +4,19 @@ public class DtoConfirmarPagoRequest {
 
     private String paymentIntentId;
     private String clientSecret;
+    private String userToken;
     private Long idUsuario;
     private Long idEspectaculo;
     private Integer cantidadEntradas;
     private String emailComprador;
+
+    public String getUserToken() {
+        return userToken;
+    }
+
+    public void setUserToken(String userToken) {
+        this.userToken = userToken;
+    }
 
     public String getPaymentIntentId() {
         return paymentIntentId;

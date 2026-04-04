@@ -8,6 +8,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.server.ResponseStatusException;
 
+import edu.esi.dls.esiusuarios.dto.UserInfoDto;
 import edu.esi.dls.esiusuarios.services.UserService;
 
 
@@ -18,17 +19,17 @@ public class ExternalController {
     @Autowired
     private UserService service;
 
-@GetMapping("/checkToken/{token}")
-    public String checkToken(@PathVariable String token) {
+    @GetMapping("/checkToken/{token}")
+    public UserInfoDto checkToken(@PathVariable String token) {
         if(token == null || token.isEmpty()){
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Se necesita el token"); 
-                
         }
-        String userName = this.service.checkToken(token);
-        if(userName == null){
+
+        UserInfoDto userInfo = this.service.getUserInfo(token);
+        if(userInfo == null){
             throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Token no válido");
         }
-        return userName;
+        return userInfo;
     }
 
 }

@@ -116,6 +116,28 @@
   background: #eef8ee;
 }
 
+.user-name {
+  color: #0f3c22;
+  font-weight: 700;
+  margin-right: 10px;
+}
+
+.btn-logout {
+  border-radius: 999px;
+  padding: 10px 16px;
+  border: 1px solid #2f8a47;
+  color: #ffffff;
+  background: #dc3545;
+  font-weight: 700;
+  font-size: 0.9rem;
+  transition: all 0.2s ease;
+  cursor: pointer;
+}
+
+.btn-logout:hover {
+  background: #c82333;
+}
+
 .hero {
   position: relative;
   overflow: hidden;

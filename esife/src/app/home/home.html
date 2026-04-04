@@ -14,8 +14,14 @@
       </div>
 
       <div class="home-actions">
-        <a routerLink="/login" class="btn-outline">Iniciar sesion</a>
-        <a routerLink="/register" class="btn-solid">Registrate</a>
+        <ng-container *ngIf="!loggedUser">
+          <a routerLink="/login" class="btn-outline">Iniciar sesion</a>
+          <a routerLink="/register" class="btn-solid">Registrate</a>
+        </ng-container>
+        <ng-container *ngIf="loggedUser">
+          <span class="user-name">{{ loggedUser }}</span>
+          <button class="btn-logout" (click)="logout()">Cerrar sesión</button>
+        </ng-container>
       </div>
     </nav>
   </header>

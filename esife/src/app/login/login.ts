@@ -49,7 +49,8 @@ export class Login {
           .pipe(timeout(10000))
       );
 
-      if (response === 'Login successful') {
+      if (response) {
+        localStorage.setItem('authToken', response);
         localStorage.setItem('loggedUser', this.name);
         const returnUrl = this.route.snapshot.queryParamMap.get('returnUrl') || '/';
         this.router.navigateByUrl(returnUrl);

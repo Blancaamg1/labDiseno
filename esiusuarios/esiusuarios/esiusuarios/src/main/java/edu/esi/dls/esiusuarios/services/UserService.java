@@ -1,57 +1,66 @@
 package edu.esi.dls.esiusuarios.services;
 
-import java.util.ArrayList;
-import java.util.List;
+import java.util.Optional;
 
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import edu.esi.dls.esiusuarios.auxiliares.Manager;
+import edu.esi.dls.esiusuarios.dao.UserDao;
+import edu.esi.dls.esiusuarios.dto.UserInfoDto;
 import edu.esi.dls.esiusuarios.model.User;
 
 @Service
 public class UserService {
-    private List<User> users;
+    private final UserDao repository;
 
-    public UserService() {
-        this.users = new ArrayList<>();
-        this.users.add(new User("Pepe", "pepe@example.com", "pepe123", "1234"));
-        this.users.add(new User("Ana", "ana@example.com", "ana123", "567"));
+    @Autowired
+    public UserService(UserDao repository) {
+        this.repository = repository;
+        if (repository.count() == 0) {
+            repository.save(new User("Pepe", "pepe@example.com", "pepe123", "1234"));
+            repository.save(new User("Ana", "ana@example.com", "ana123", "567"));
+        }
     }
 
     public String login(String name, String password) {
-        for(User user : this.users){
-            if(user.getName().equalsIgnoreCase(name) && user.getPassword().equals(password)){
-                return "Login successful";
-            }
+        Optional<User> user = repository.findByNameIgnoreCase(name);
+        if (user.isPresent() && user.get().getPassword().equals(password)) {
+            return user.get().getToken();
         }
         return null;
     }
 
     public String checkToken(String token) {
-        for(User user : this.users){
-            if(user.getToken().equals(token)){
-                return user.getName();
-            }
-        }
-        return null;
+        Optional<User> user = repository.findByToken(token);
+        return user.map(User::getName).orElse(null);
+    }
+
+    public UserInfoDto getUserInfo(String token) {
+        Optional<User> user = repository.findByToken(token);
+        return user.map(u -> {
+            UserInfoDto dto = new UserInfoDto();
+            dto.setId(u.getId());
+            dto.setName(u.getName());
+            dto.setEmail(u.getEmail());
+            return dto;
+        }).orElse(null);
     }
 
     public String register(String username, String email, String pwd1) {
-        for(User user : this.users){
-            if(user.getName().equalsIgnoreCase(username)){
-                return null;
-            }
-
-            if(user.getEmail() != null && user.getEmail().equalsIgnoreCase(email)){
-                return null;
-            }
+        if (repository.findByNameIgnoreCase(username).isPresent()) {
+            return null;
         }
 
-        User newUser = new User(username, email, pwd1, String.valueOf(this.users.size() + 1));
-        this.users.add(newUser);
-        Manager.getInstance().getEmailService().sendEmail(email, 
+        if (repository.findByEmailIgnoreCase(email).isPresent()) {
+            return null;
+        }
+
+        User newUser = new User(username, email, pwd1, String.valueOf(repository.count() + 1));
+        repository.save(newUser);
+        Manager.getInstance().getEmailService().sendEmail(email,
             "asunto", "Bienvenido a ESIUsuarios",
-            "texto","Bienvenido al sistema, confirma tu registro aqui: http://localhost:8081/users/confirm?token=" + newUser.getToken());
+            "texto", "Bienvenido al sistema, confirma tu registro aqui: http://localhost:8081/users/confirm?token=" + newUser.getToken());
 
         return "Le hemos enviado un correo de confirmación a " + email;
     }

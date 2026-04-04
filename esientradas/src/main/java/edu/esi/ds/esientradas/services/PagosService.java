@@ -21,6 +21,7 @@ import edu.esi.ds.esientradas.dao.EntradaDao;
 import edu.esi.ds.esientradas.dao.PagoDao;
 import edu.esi.ds.esientradas.dto.DtoConfirmarPagoRequest;
 import edu.esi.ds.esientradas.dto.DtoConfirmarPagoResponse;
+import edu.esi.ds.esientradas.dto.DtoUsuarioInfo;
 import edu.esi.ds.esientradas.model.Configuration;
 import edu.esi.ds.esientradas.model.Entrada;
 import edu.esi.ds.esientradas.model.Estado;
@@ -29,6 +30,9 @@ import edu.esi.ds.esientradas.model.Pago;
 
 @Service
 public class PagosService {
+
+    @Autowired
+    private UsuarioService usuarioService;
 
     private static final String FALLBACK_STRIPE_SECRET_KEY = "";
 
@@ -108,15 +112,29 @@ public class PagosService {
                 pago.setEstado("PAGADO");
                 pago.setFechaPago(LocalDateTime.now());
 
-                // La entidad actual exige estos datos no nulos; si frontend no los envia se guardan valores por defecto.
-                pago.setIdUsuario(request.getIdUsuario() != null ? request.getIdUsuario() : 0L);
+                DtoUsuarioInfo authenticatedUser = null;
+                if (request.getUserToken() != null && !request.getUserToken().isBlank()) {
+                    authenticatedUser = this.usuarioService.getUserInfo(request.getUserToken());
+                }
+
+                if (authenticatedUser != null) {
+                    pago.setIdUsuario(authenticatedUser.getId() != null ? authenticatedUser.getId() : 0L);
+                    String emailFromUser = authenticatedUser.getEmail();
+                    if (emailFromUser == null || emailFromUser.isBlank()) {
+                        emailFromUser = authenticatedUser.getName().replaceAll("\\s+", ".").toLowerCase(Locale.ROOT) + "@usuario.local";
+                    }
+                    pago.setEmailComprador(emailFromUser);
+                } else {
+                    pago.setIdUsuario(request.getIdUsuario() != null ? request.getIdUsuario() : 0L);
+                    pago.setEmailComprador(
+                        request.getEmailComprador() != null && !request.getEmailComprador().isBlank()
+                            ? request.getEmailComprador()
+                            : "comprador@pendiente.local"
+                    );
+                }
+
                 pago.setIdEspectaculo(request.getIdEspectaculo() != null ? request.getIdEspectaculo() : 0L);
                 pago.setCantidadEntradas(request.getCantidadEntradas() != null ? request.getCantidadEntradas() : 1);
-                pago.setEmailComprador(
-                    request.getEmailComprador() != null && !request.getEmailComprador().isBlank()
-                        ? request.getEmailComprador()
-                        : "comprador@pendiente.local"
-                );
 
                 this.reservarEntradas(request.getIdEspectaculo(), pago.getCantidadEntradas());
                 pago = this.pagoDao.save(pago);

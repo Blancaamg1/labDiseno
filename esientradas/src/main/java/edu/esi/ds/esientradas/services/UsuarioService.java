@@ -6,22 +6,28 @@ import org.springframework.web.client.RestClientException;
 import org.springframework.web.client.RestTemplate;
 import org.springframework.web.server.ResponseStatusException;
 
+import edu.esi.ds.esientradas.dto.DtoUsuarioInfo;
+
 @Service
 public class UsuarioService {
 
-    public String checkToken(String userToken) {
+    public DtoUsuarioInfo getUserInfo(String userToken) {
         String endpoint = "http://localhost:8081/external/checkToken";
         RestTemplate rest = new RestTemplate();
 
-        try{
-            String userName = rest.getForObject(endpoint + "/" + userToken, String.class);
-            if(userName == null || userName.isEmpty()){
+        try {
+            DtoUsuarioInfo userInfo = rest.getForObject(endpoint + "/" + userToken, DtoUsuarioInfo.class);
+            if (userInfo == null || userInfo.getId() == null || userInfo.getName() == null || userInfo.getName().isBlank()) {
                 throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Se necesita el token");
             }
-            return userName;
-        }catch(RestClientException ex){
+            return userInfo;
+        } catch (RestClientException ex) {
             throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "No se pudo validar el token", ex);
         }
+    }
+
+    public String checkToken(String userToken) {
+        return getUserInfo(userToken).getName();
     }
 
 }
