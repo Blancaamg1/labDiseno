@@ -122,6 +122,20 @@
   margin-right: 10px;
 }
 
+.user-profile {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.user-avatar {
+  width: 34px;
+  height: 34px;
+  border-radius: 999px;
+  border: 1px solid rgba(47, 138, 71, 0.35);
+  background: #f4fff4;
+}
+
 .btn-logout {
   border-radius: 999px;
   padding: 10px 16px;

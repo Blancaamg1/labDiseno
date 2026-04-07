@@ -13,6 +13,7 @@ import { filter } from 'rxjs';
 })
 export class HomeComponent implements OnInit {
   loggedUser: string | null = null;
+  userAvatarUrl: string | null = null;
   private isBrowser: boolean;
 
   constructor(
@@ -28,6 +29,11 @@ export class HomeComponent implements OnInit {
       return;
     }
 
+    const cachedUser = localStorage.getItem('loggedUserName');
+    if (cachedUser) {
+      this.applyLoggedUser(cachedUser);
+    }
+
     this.refreshLoggedUser();
 
     this.router.events
@@ -38,7 +44,6 @@ export class HomeComponent implements OnInit {
   }
 
   private refreshLoggedUser() {
-    this.loggedUser = localStorage.getItem('loggedUser');
     this.loadLoggedUser();
   }
 
@@ -47,35 +52,44 @@ export class HomeComponent implements OnInit {
       return;
     }
 
-    const token = localStorage.getItem('authToken');
-    if (!token) {
-      this.loggedUser = localStorage.getItem('loggedUser');
-      return;
-    }
-
     this.http
-      .get('http://localhost:8081/users/me', {
-        params: { token },
-        responseType: 'text',
-      })
+      .get<{ name: string }>('http://localhost:8081/users/session', { withCredentials: true })
       .subscribe({
-        next: (name) => {
-          localStorage.setItem('loggedUser', name);
-          this.loggedUser = name;
+        next: (session) => {
+          this.applyLoggedUser(session.name);
+          localStorage.setItem('loggedUserName', session.name);
         },
         error: () => {
-          localStorage.removeItem('authToken');
-          localStorage.removeItem('loggedUser');
-          this.loggedUser = null;
+          this.clearLoggedUser();
         },
       });
   }
 
-  logout() {
-    if (this.isBrowser) {
-      localStorage.removeItem('authToken');
-      localStorage.removeItem('loggedUser');
-    }
+  private applyLoggedUser(name: string) {
+    this.loggedUser = name;
+    this.userAvatarUrl = this.buildAvatarUrl(name);
+  }
+
+  private clearLoggedUser() {
     this.loggedUser = null;
+    this.userAvatarUrl = null;
+    localStorage.removeItem('loggedUserName');
+  }
+
+  private buildAvatarUrl(name: string): string {
+    return `https://api.dicebear.com/8.x/initials/svg?seed=${encodeURIComponent(name)}`;
+  }
+
+  logout() {
+    this.http.post('http://localhost:8081/users/logout', {}, { withCredentials: true }).subscribe({
+      next: () => {
+        this.clearLoggedUser();
+        this.router.navigateByUrl('/');
+      },
+      error: () => {
+        this.clearLoggedUser();
+        this.router.navigateByUrl('/');
+      },
+    });
   }
 }

@@ -19,7 +19,15 @@
           <a routerLink="/register" class="btn-solid">Registrate</a>
         </ng-container>
         <ng-container *ngIf="loggedUser">
-          <span class="user-name">{{ loggedUser }}</span>
+          <div class="user-profile">
+            <img
+              *ngIf="userAvatarUrl"
+              [src]="userAvatarUrl"
+              [alt]="'Avatar de ' + loggedUser"
+              class="user-avatar"
+            />
+            <span class="user-name">{{ loggedUser }}</span>
+          </div>
           <button class="btn-logout" (click)="logout()">Cerrar sesión</button>
         </ng-container>
       </div>
@@ -42,7 +50,7 @@
       <div class="hero-buttons">
         <a routerLink="/espectaculos" class="btn-solid">Ver espectaculos</a>
         <a routerLink="/espectaculos" class="btn-solid-alt">Comprar entradas</a>
-        <a routerLink="/login" class="btn-outline">Iniciar sesion</a>
+        <a *ngIf="!loggedUser" routerLink="/login" class="btn-outline">Iniciar sesion</a>
       </div>
     </div>
 

@@ -5,6 +5,12 @@ import { HttpClient } from '@angular/common/http';
 import { ActivatedRoute, Router } from '@angular/router';
 import { firstValueFrom, timeout } from 'rxjs';
 
+type LoginResponse = {
+  userId: string;
+  name: string;
+  httpSessionId: string;
+};
+
 @Component({
   selector: 'app-login',
   standalone: true,
@@ -44,20 +50,18 @@ export class Login {
     };
 
     try {
-      const response = await firstValueFrom(
-        this.http.post('http://localhost:8081/users/login', payload, { responseType: 'text' })
+      await firstValueFrom(
+        this.http.post<LoginResponse>('http://localhost:8081/users/login', payload, { withCredentials: true })
           .pipe(timeout(10000))
       );
 
-      if (response) {
-        localStorage.setItem('authToken', response);
-        localStorage.setItem('loggedUser', this.name);
-        const returnUrl = this.route.snapshot.queryParamMap.get('returnUrl') || '/';
-        this.router.navigateByUrl(returnUrl);
-      } else {
-        this.error = 'Invalid Credentials';
-        this.cdr.detectChanges();
+      const displayName = this.name.trim();
+      if (displayName) {
+        localStorage.setItem('loggedUserName', displayName);
       }
+
+      const returnUrl = this.route.snapshot.queryParamMap.get('returnUrl') || '/me';
+      this.router.navigateByUrl(returnUrl);
     } catch (err: any) {
       if (err?.status === 401) {
         this.error = 'Invalid Credentials';

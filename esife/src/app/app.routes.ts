@@ -8,6 +8,7 @@ import { Register } from './register/register';
 
 export const routes: Routes = [
   { path: '', component: HomeComponent },
+  { path: 'me', component: HomeComponent, canActivate: [authGuard] },
   { path: 'espectaculos', component: Espectaculos },
   { path: 'login', component: Login },
   { path: 'register', component: Register },

@@ -1,6 +1,9 @@
 package edu.esi.dls.esiusuarios.http;
 
+import java.util.HashMap;
 import java.util.Map;
+
+import jakarta.servlet.http.HttpSession;
 
 import org.json.JSONObject;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -17,7 +20,7 @@ import org.springframework.web.server.ResponseStatusException;
 import edu.esi.dls.esiusuarios.services.UserService;
 
 @RestController
-@CrossOrigin(origins = "http://localhost:4200")
+@CrossOrigin(origins = "http://localhost:4200", allowCredentials = "true")
 @RequestMapping("/users")
 public class UserController {
 
@@ -26,7 +29,7 @@ public class UserController {
 
 
     @PostMapping("/login")
-    public String login(@RequestBody Map<String, String> credentials){
+    public HashMap<String, Object> login(HttpSession session, @RequestBody Map<String, String> credentials){
         JSONObject jsonCredentials = new JSONObject(credentials);
         String name = jsonCredentials.optString("name").trim();
         String password = jsonCredentials.optString("pwd");
@@ -34,20 +37,63 @@ public class UserController {
         if(name.isEmpty() || password.isEmpty()){
             throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Invalid credentials");
         }
-        String result = this.service.login(name, password);
-        if(result == null){
+        String userId = this.service.login(name, password);
+        if(userId == null){
             throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Invalid credentials");
         }
 
+        session.setAttribute("userId", userId);
+
+        HashMap<String, Object> result = new HashMap<>();
+        result.put("userId", userId);
+        result.put("name", name);
+        result.put("httpSessionId", session.getId());
+        return result;
+
+    }
+
+    @GetMapping("/session")
+    public HashMap<String, Object> getSession(HttpSession session) {
+        Object userId = session.getAttribute("userId");
+        if (userId == null) {
+            throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "No active session");
+        }
+
+        String name = this.service.checkToken(userId.toString());
+        if (name == null) {
+            session.invalidate();
+            throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Invalid session");
+        }
+
+        HashMap<String, Object> result = new HashMap<>();
+        result.put("userId", userId);
+        result.put("name", name);
+        result.put("httpSessionId", session.getId());
+        return result;
+
+    }
+
+    @PostMapping("/logout")
+    public HashMap<String, Object> logout(HttpSession session) {
+        session.invalidate();
+
+        HashMap<String, Object> result = new HashMap<>();
+        result.put("message", "Logout successful");
         return result;
 
     }
 
     @GetMapping("/me")
-    public String currentUser(@RequestParam String token){
-        String result = this.service.checkToken(token);
+    public String currentUser(HttpSession session){
+        Object userId = session.getAttribute("userId");
+        if(userId == null){
+            throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "No active session");
+        }
+
+        String result = this.service.checkToken(userId.toString());
         if(result == null){
-            throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Invalid token");
+            session.invalidate();
+            throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Invalid session");
         }
         return result;
     }
