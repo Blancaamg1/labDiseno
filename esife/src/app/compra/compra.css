@@ -1,0 +1,104 @@
+.pagina-pago {
+  min-height: 100vh;
+  margin: 0;
+  font-family: Tahoma, sans-serif;
+  background-color: #c7dfc6;
+}
+
+.cabecera {
+  background-color: #a8d5ba;
+  padding: 18px 30px;
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+  text-align: center;
+  font-weight: bold;
+  color: #2d5a3d;
+  font-size: 28px;
+}
+
+.contenedor-pago {
+  display: flex;
+  justify-content: center;
+  margin-top: 40px;
+}
+
+.pagos {
+  background-color: #f7fbf7;
+  padding: 25px;
+  border-radius: 12px;
+  box-shadow: 0 3px 10px rgba(0, 0, 0, 0.12);
+  min-width: 450px;
+}
+
+.fila-pago {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.fila-pago label {
+  font-size: 16px;
+  color: #2d2d2d;
+}
+
+.pagos input[type="number"] {
+  width: 180px;
+  padding: 8px 10px;
+  font-size: 16px;
+  border: 1px solid #b7cbb7;
+  border-radius: 6px;
+  outline: none;
+}
+
+.pagos input[type="number"]:focus {
+  border-color: #2d5a3d;
+}
+
+.btnPago,
+#submit {
+  padding: 9px 16px;
+  font-size: 15px;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  background-color: #2d5a3d;
+  color: white;
+  transition: 0.2s;
+}
+
+.btnPago:hover,
+#submit:hover {
+  opacity: 0.9;
+}
+
+#submit:disabled {
+  background-color: #8aa394;
+  cursor: not-allowed;
+}
+
+#payment-form {
+  margin-top: 25px;
+}
+
+#card-element {
+  padding: 12px;
+  border: 1px solid #b7cbb7;
+  border-radius: 6px;
+  background-color: white;
+  margin-bottom: 15px;
+}
+
+#submit {
+  width: 100%;
+}
+
+#card-error {
+  color: #b00020;
+  margin-top: 12px;
+  font-size: 14px;
+}
+
+.result-message {
+  margin-top: 12px;
+  font-size: 14px;
+}

@@ -1,0 +1,237 @@
+/* Global Styles */
+body {
+  margin: 0;
+  background-color: #c5e6c5; 
+  font-family: Tahoma, sans-serif;
+}
+
+/* Navbar Styles */
+.navbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  background-color: #a8d5ba;
+  padding: 15px 30px;
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+}
+
+.navbar-left {
+  display: flex;
+  align-items: center;
+  gap: 15px;
+  flex: 1;
+}
+
+.logo {
+  width: 50px;
+  height: 50px;
+  background-color: #28a745;
+  color: white;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: bold;
+  font-size: 24px;
+}
+
+.brand {
+  font-weight: bold;
+  color: #2d5a3d;
+  font-size: 16px;
+}
+
+.navbar-center {
+  display: flex;
+  gap: 25px;
+  flex: 2;
+  justify-content: center;
+}
+
+.nav-link {
+  text-decoration: none;
+  color: #2d5a3d;
+  font-weight: 500;
+  transition: color 0.3s;
+}
+
+.nav-link:hover {
+  color: #1e3a2a;
+}
+
+.navbar-right {
+  display: flex;
+  align-items: center;
+  gap: 20px;
+  flex: 1;
+  justify-content: flex-end;
+}
+
+.user-profile {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.user-avatar {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+}
+
+.user-name {
+  font-size: 14px;
+  font-weight: 500;
+  color: #2d5a3d;
+}
+
+.btn-logout {
+  background-color: #e74c3c;
+  color: white;
+  border: none;
+  padding: 8px 15px;
+  border-radius: 20px;
+  cursor: pointer;
+  font-weight: 500;
+  transition: background-color 0.3s;
+}
+
+.btn-logout:hover {
+  background-color: #c0392b;
+}
+
+/* Main Content */
+.main-content {
+  padding: 0px 20px 40px 20px;
+}
+
+.cabecera {
+  text-align: center;
+  margin-bottom: 25px;
+  color: rgb(0, 0, 0);
+  padding: 10px;
+}
+
+.cabecera h1 {
+  font-size: 48px;
+  color: #2d5a3d;
+  margin: 20px 0;
+}
+
+.btnVerEscenarios {
+  background-color: rgb(107, 208, 107);
+  color: black;
+  padding: 8px 18px;
+  border: none;
+  border-radius: 20px;
+  cursor: pointer;
+  font-weight: 500;
+  transition: background-color 0.3s;
+  margin-top: 20px;
+}
+
+.btnVerEscenarios:hover {
+  background-color: rgb(80, 180, 80);
+}
+
+/* Grid & Cards */
+.escenarios-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); 
+  gap: 20px;
+  padding: 20px;
+}
+
+.card-escenario {
+  background: white;
+  border-radius: 12px;
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+  overflow: hidden;
+  border: 1px solid #eee;
+}
+
+.card-header {
+  background-color: #f8f9fa;
+  padding: 15px;
+  cursor: pointer;
+  border-bottom: 2px solid #28a745;
+  transition: background-color 0.3s;
+}
+
+.card-header:hover {
+  background-color: #f0f0f0;
+}
+
+.card-header h2 {
+  margin: 0 0 10px 0;
+  color: #2d5a3d;
+  font-size: 20px;
+}
+
+.card-header p {
+  margin: 0;
+  color: #555;
+  font-size: 14px;
+}
+
+.lista-espectaculos {
+  padding: 20px;
+}
+
+/* Items */
+.item-espectaculo {
+  padding: 12px;
+  border-bottom: 1px solid #eee;
+  transition: background 0.2s;
+  cursor: pointer;
+}
+
+.item-espectaculo:hover {
+  background-color: #f0f7ff;
+}
+
+.item-espectaculo:last-child {
+  border-bottom: none;
+}
+
+.info-artista {
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 8px;
+}
+
+.info-artista strong {
+  color: #2d5a3d;
+}
+
+.info-artista span {
+  color: #999;
+  font-size: 14px;
+}
+
+.info-entradas {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.info-entradas p {
+  margin: 0;
+  color: #666;
+  font-size: 14px;
+}
+
+.btn-compra {
+  background: #28a745;
+  color: white;
+  border: none;
+  padding: 5px 10px;
+  border-radius: 5px;
+  cursor: pointer;
+  font-size: 0.9em;
+  transition: background-color 0.3s;
+}
+
+.btn-compra:hover {
+  background-color: #218838;
+}

@@ -1,15 +1,29 @@
-<div class="cabecera">
-  <h1>Espectáculos ESI</h1>
-  <button class="btnVerEscenarios" (click)="getEscenarios()">Ver Espectáculos</button>
+<nav class="navbar">
+  <div class="navbar-left">
+    <div class="logo">E</div>
+    <span class="brand">Espectaculos ESI</span>
+  </div>
+  
 
+  <div class="navbar-right" *ngIf="loggedUser">
+    <div class="user-profile">
+      <img
+        *ngIf="userAvatarUrl"
+        [src]="userAvatarUrl"
+        [alt]="'Avatar de ' + loggedUser"
+        class="user-avatar"
+      />
+      <span class="user-name">{{ loggedUser }}</span>
+    </div>
+    <button class="btn-logout" (click)="cerrarSesion()">Cerrar sesión</button>
+  </div>
+</nav>
 
-<div class="inicioSesion">
-  <h1 class="inSes"> Inicia Sesión/Registrate </h1>
-  <button class="btn-login" (click)="login(); $event.stopPropagation()">
-    Iniciar sesión
-  </button>
-</div>
-</div>
+<div class="main-content">
+  <div class="cabecera">
+    <h1>Espectáculos ESI</h1>
+    <button class="btnVerEscenarios" (click)="getEscenarios()">Ver Espectáculos</button>
+  </div>
 
 <div class="escenarios-grid">
   <div class="card-escenario" *ngFor="let escenario of escenarios">
@@ -36,4 +50,5 @@
       </div>
     </div>
   </div>
+</div>
 </div>
