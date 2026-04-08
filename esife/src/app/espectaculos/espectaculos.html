@@ -1,7 +1,14 @@
 <nav class="navbar">
   <div class="navbar-left">
-    <div class="logo">E</div>
+    <img src="/logo.png" alt="Logo Espectaculos ESI" class="logo" />
     <span class="brand">Espectaculos ESI</span>
+  </div>
+
+  <div class="navbar-center">
+    <a routerLink="/" class="nav-link">Inicio</a>
+    <a routerLink="/espectaculos" class="nav-link">Espectaculos</a>
+    <a routerLink="/espectaculos" class="nav-link">Eventos</a>
+    <a routerLink="/espectaculos" class="nav-link">Contacto</a>
   </div>
   
 
@@ -20,35 +27,44 @@
 </nav>
 
 <div class="main-content">
-  <div class="cabecera">
-    <h1>Espectáculos ESI</h1>
-    <button class="btnVerEscenarios" (click)="getEscenarios()">Ver Espectáculos</button>
-  </div>
+  <section class="event-list-header">
+    <h1>Proximos eventos</h1>
+    <span class="event-count">{{ totalEventos }} disponibles</span>
+  </section>
 
-<div class="escenarios-grid">
-  <div class="card-escenario" *ngFor="let escenario of escenarios">
-    <div class="card-header" (click)="getEspectaculos(escenario)">
-      <h2>{{ escenario.nombre }}</h2>
-      <p>{{ escenario.descripcion }}</p>
-    </div>
+  <section class="escenarios-list">
+    <article class="escenario-block" *ngFor="let escenario of escenarios">
+      <header class="escenario-head">
+        <h2>{{ escenario.nombre }}</h2>
+        <p *ngIf="escenario.descripcion">{{ escenario.descripcion }}</p>
+      </header>
 
-    <div class="lista-espectaculos">
-      <div class="item-espectaculo" *ngFor="let espectaculo of escenario.espectaculos"
-           (click)="getNumeroDeEntradas(espectaculo)">
-        
-        <div class="info-artista">
-          <strong>{{ espectaculo.artista }}</strong>
-          <span>{{ espectaculo.fecha }}</span>
-        </div>
+      <div class="events-wrapper">
+        <div class="event-row" *ngFor="let espectaculo of escenario.espectaculos">
+          <div class="event-date">
+            <span class="month">{{ getMesCorto(espectaculo.fecha) }}</span>
+            <span class="day">{{ getDiaMes(espectaculo.fecha) }}</span>
+          </div>
 
-        <div class="info-entradas" *ngIf="espectaculo.entradas">
-          <p>Total: {{ espectaculo.entradas.total }}</p>
-          <button class="btn-compra" (click)="irAComprarEntradas(espectaculo); $event.stopPropagation()">
-            {{ espectaculo.entradas.libres }} libres - ¡Comprar!
-          </button>
+          <div class="event-info">
+            <p class="event-meta">{{ getDiaHora(espectaculo.fecha) }}</p>
+            <h3>{{ espectaculo.artista }}</h3>
+            <p class="event-location">{{ escenario.nombre }}</p>
+            <p class="event-availability" *ngIf="espectaculo.entradas && disponibilidadLimitada(espectaculo)">
+              Disponibilidad limitada
+            </p>
+          </div>
+
+          <div class="event-actions">
+            <button class="btn-compra" (click)="irAComprarEntradas(espectaculo)">
+              Entradas
+            </button>
+            <small *ngIf="espectaculo.entradas" class="entradas-resumen">
+              {{ espectaculo.entradas.libres }} libres de {{ espectaculo.entradas.total }}
+            </small>
+          </div>
         </div>
       </div>
-    </div>
-  </div>
-</div>
+    </article>
+  </section>
 </div>

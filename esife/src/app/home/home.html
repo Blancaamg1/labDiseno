@@ -2,15 +2,15 @@
   <header class="home-header">
     <nav class="home-nav">
       <div class="home-brand">
-        <div class="home-logo">E</div>
+        <img src="/logo.png" alt="Logo Espectaculos ESI" class="home-logo" />
         <span class="home-title">Espectaculos ESI</span>
       </div>
 
       <div class="home-menu">
         <a routerLink="/" class="home-link">Inicio</a>
-        <a routerLink="/espectaculos" class="home-link">Espectaculos</a>
-        <a routerLink="/espectaculos" class="home-link">Eventos</a>
-        <a routerLink="/espectaculos" class="home-link">Contacto</a>
+        <a href="/espectaculos" class="home-link">Espectaculos</a>
+        <a href="/espectaculos" class="home-link">Eventos</a>
+        <a href="/espectaculos" class="home-link">Contacto</a>
       </div>
 
       <div class="home-actions">
@@ -48,8 +48,8 @@
       </p>
 
       <div class="hero-buttons">
-        <a routerLink="/espectaculos" class="btn-solid">Ver espectaculos</a>
-        <a routerLink="/espectaculos" class="btn-solid-alt">Comprar entradas</a>
+        <a href="/espectaculos" class="btn-solid">Ver espectaculos</a>
+        <a href="/espectaculos" class="btn-solid-alt">Comprar entradas</a>
         <a *ngIf="!loggedUser" routerLink="/login" class="btn-outline">Iniciar sesion</a>
       </div>
     </div>
