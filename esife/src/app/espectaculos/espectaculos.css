@@ -141,6 +141,73 @@ body {
   font-size: 0.95rem;
 }
 
+.filters-panel {
+  margin-bottom: 18px;
+  padding: 14px;
+  border-radius: 16px;
+  background: rgba(241, 250, 243, 0.88);
+  border: 1px solid rgba(92, 150, 109, 0.2);
+}
+
+.filters-grid {
+  display: grid;
+  grid-template-columns: 2fr 1fr auto;
+  gap: 12px;
+  align-items: end;
+}
+
+.filter-field {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.filter-field label {
+  color: #2e5b42;
+  font-size: 0.85rem;
+  font-weight: 700;
+}
+
+.filter-field input {
+  height: 40px;
+  border: 1px solid rgba(92, 150, 109, 0.3);
+  border-radius: 10px;
+  padding: 0 12px;
+  font-size: 0.95rem;
+  color: #113521;
+  background: #ffffff;
+}
+
+.filter-field input:focus-visible {
+  outline: 3px solid rgba(24, 150, 69, 0.25);
+  outline-offset: 1px;
+}
+
+.filter-actions {
+  display: flex;
+  justify-content: flex-end;
+}
+
+.btn-limpiar {
+  background: #ffffff;
+  color: #1f6f3d;
+  border: 1px solid rgba(31, 138, 69, 0.4);
+  padding: 10px 14px;
+  border-radius: 999px;
+  cursor: pointer;
+  font-size: 0.88rem;
+  font-weight: 700;
+}
+
+.btn-limpiar:hover:not(:disabled) {
+  background: #eaf7ee;
+}
+
+.btn-limpiar:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+
 .escenarios-list {
   display: flex;
   flex-direction: column;
@@ -418,6 +485,14 @@ body {
   .navbar {
     padding: 12px 18px;
     gap: 12px;
+  }
+
+  .filters-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .filter-actions {
+    justify-content: flex-start;
   }
 
   .event-list-header {

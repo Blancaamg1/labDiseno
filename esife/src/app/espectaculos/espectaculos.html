@@ -32,6 +32,39 @@
     <span class="event-count">{{ totalEventos }} disponibles</span>
   </section>
 
+  <section class="filters-panel">
+    <div class="filters-grid">
+      <div class="filter-field filter-text">
+        <label for="filtroTexto">Buscar evento o escenario</label>
+        <input
+          id="filtroTexto"
+          type="text"
+          name="filtroTexto"
+          [(ngModel)]="filtroTexto"
+          (ngModelChange)="onFiltroChange()"
+          placeholder="Ej. Rock, Auditorio, Teatro..."
+        />
+      </div>
+
+      <div class="filter-field">
+        <label for="filtroFecha">Fecha</label>
+        <input
+          id="filtroFecha"
+          type="date"
+          name="filtroFecha"
+          [(ngModel)]="filtroFecha"
+          (ngModelChange)="onFiltroChange()"
+        />
+      </div>
+
+      <div class="filter-actions">
+        <button class="btn-limpiar" type="button" (click)="limpiarFiltros()" [disabled]="!hayFiltrosActivos">
+          Quitar filtros
+        </button>
+      </div>
+    </div>
+  </section>
+
   <section class="escenarios-list">
     <article class="escenario-block" *ngFor="let escenario of escenarios">
       <header class="escenario-head">

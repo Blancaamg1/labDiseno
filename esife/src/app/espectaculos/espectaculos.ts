@@ -1,5 +1,6 @@
 import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
+import { FormsModule } from '@angular/forms';
 import { EspectaculosService } from './espectaculos.service';
 import { Router } from '@angular/router';
 import { retry } from 'rxjs';
@@ -7,13 +8,17 @@ import { retry } from 'rxjs';
 
 @Component({
   selector: 'app-espectaculos',
-  imports: [CommonModule],
+  imports: [CommonModule, FormsModule],
   standalone: true,              
   templateUrl: './espectaculos.html',
   styleUrl: './espectaculos.css',
 })
 export class Espectaculos implements OnInit {
   escenarios: any[] = [];
+  escenariosOriginales: any[] = [];
+  filtroTexto = '';
+  filtroFecha = '';
+
   loggedUser: string | null = null;
   userAvatarUrl: string | null = null;
   private readonly meses = ['ene', 'feb', 'mar', 'abr', 'may', 'jun', 'jul', 'ago', 'sep', 'oct', 'nov', 'dic'];
@@ -40,10 +45,11 @@ export class Espectaculos implements OnInit {
   getEscenarios(){
     this.espectaculosService.getEscenarios().pipe(retry({ count: 2, delay: 800 })).subscribe(
       (response: any) => {
-        this.escenarios = Array.isArray(response)
+        this.escenariosOriginales = Array.isArray(response)
           ? response.map((escenario: any) => ({ ...escenario, espectaculos: [] }))
           : [];
-        this.escenarios.forEach((escenario: any) => this.getEspectaculos(escenario));
+        this.aplicarFiltros();
+        this.escenariosOriginales.forEach((escenario: any) => this.getEspectaculos(escenario));
       },
       (error: any) => {
         console.error('Error al obtener los escenarios', error);
@@ -51,12 +57,12 @@ export class Espectaculos implements OnInit {
     )
   }
 
-  getEspectaculos(escenarios : any){
-    this.espectaculosService.getEspectaculos(escenarios.id).pipe(retry({ count: 2, delay: 800 })).subscribe(
+  getEspectaculos(escenario : any){
+    this.espectaculosService.getEspectaculos(escenario.id).pipe(retry({ count: 2, delay: 800 })).subscribe(
       (response : any) => {
-        escenarios.espectaculos = Array.isArray(response) ? response : [];
-        escenarios.espectaculos.forEach((espectaculo: any) => this.getNumeroDeEntradas(espectaculo));
-        this.escenarios = [...this.escenarios];
+        escenario.espectaculos = Array.isArray(response) ? response : [];
+        escenario.espectaculos.forEach((espectaculo: any) => this.getNumeroDeEntradas(espectaculo));
+        this.aplicarFiltros();
       },
       (error:any) => {
         console.error('Error al obtener los escenarios', error);
@@ -66,6 +72,10 @@ export class Espectaculos implements OnInit {
 
   get totalEventos(): number {
     return this.escenarios.reduce((acc, escenario) => acc + (escenario.espectaculos?.length ?? 0), 0);
+  }
+
+  get hayFiltrosActivos(): boolean {
+    return !!this.filtroTexto.trim() || !!this.filtroFecha;
   }
 
   private parseFecha(fecha: any): Date | null {
@@ -137,7 +147,7 @@ export class Espectaculos implements OnInit {
   this.espectaculosService.getNumeroDeEntradasComoDto(espectaculo.id).pipe(retry({ count: 1, delay: 600 })).subscribe(
     (response: any) => {
       espectaculo.entradas = response;
-      this.escenarios = [...this.escenarios];
+      this.aplicarFiltros();
     },
     (error:any) => {
       console.error('Error al obtener las entradas', error);
@@ -165,5 +175,82 @@ export class Espectaculos implements OnInit {
     this.loggedUser = null;
     this.userAvatarUrl = null;
     this.router.navigate(['/login']);
+  }
+
+  onFiltroChange(): void {
+    this.aplicarFiltros();
+  }
+
+  limpiarFiltros(): void {
+    this.filtroTexto = '';
+    this.filtroFecha = '';
+    this.aplicarFiltros();
+  }
+
+  private aplicarFiltros(): void {
+    const texto = this.filtroTexto.trim().toLowerCase();
+    const fechaFiltro = this.filtroFecha;
+    const hayFiltros = !!texto || !!fechaFiltro;
+
+    if (!hayFiltros) {
+      this.escenarios = this.escenariosOriginales.map((escenario: any) => ({
+        ...escenario,
+        espectaculos: [...(escenario.espectaculos ?? [])]
+      }));
+      return;
+    }
+
+    this.escenarios = this.escenariosOriginales
+      .map((escenario: any) => {
+        const espectaculosFiltrados = (escenario.espectaculos ?? []).filter((espectaculo: any) => {
+          const coincideTexto = this.coincideTexto(escenario, espectaculo, texto);
+          const coincideFecha = this.coincideFecha(espectaculo?.fecha, fechaFiltro);
+          return coincideTexto && coincideFecha;
+        });
+
+        return {
+          ...escenario,
+          espectaculos: espectaculosFiltrados
+        };
+      })
+      .filter((escenario: any) => escenario.espectaculos.length > 0);
+  }
+
+  private coincideTexto(escenario: any, espectaculo: any, texto: string): boolean {
+    if (!texto) {
+      return true;
+    }
+
+    const contenido = [
+      espectaculo?.nombre,
+      espectaculo?.artista,
+      espectaculo?.descripcion,
+      escenario?.nombre,
+      escenario?.descripcion,
+      escenario?.lugar
+    ]
+      .filter(Boolean)
+      .join(' ')
+      .toLowerCase();
+
+    return contenido.includes(texto);
+  }
+
+  private coincideFecha(fechaEvento: any, fechaFiltro: string): boolean {
+    if (!fechaFiltro) {
+      return true;
+    }
+
+    const date = this.parseFecha(fechaEvento);
+    if (!date) {
+      return false;
+    }
+
+    const year = date.getFullYear();
+    const month = String(date.getMonth() + 1).padStart(2, '0');
+    const day = String(date.getDate()).padStart(2, '0');
+    const fechaEventoNormalizada = `${year}-${month}-${day}`;
+
+    return fechaEventoNormalizada === fechaFiltro;
   }
 }
