@@ -5,6 +5,7 @@ import { Espectaculos } from './espectaculos/espectaculos';
 import { HomeComponent } from './home/home';
 import { Login } from './login/login';
 import { Register } from './register/register';
+import { ElegirEntradas } from './elegir-entradas/elegir-entradas';
 
 export const routes: Routes = [
   { path: '', component: HomeComponent },
@@ -13,4 +14,5 @@ export const routes: Routes = [
   { path: 'login', component: Login },
   { path: 'register', component: Register },
   { path: 'comprar', component: CompraComponent, canActivate: [authGuard] },
+  { path: 'elegirEntradas', component: ElegirEntradas},
 ];

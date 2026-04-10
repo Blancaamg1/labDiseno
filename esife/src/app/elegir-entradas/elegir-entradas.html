@@ -1,0 +1,300 @@
+<div class="pagina-entradas" *ngIf="infoCompra">
+
+  <section class="cabecera-compra">
+    <div class="cabecera-texto">
+      <p class="subtitulo">Selección de entradas</p>
+      <h1>{{ infoCompra.nombreEspectaculo }}</h1>
+      <p class="descripcion">
+        Elige tus entradas en el mapa del recinto y revisa tu selección antes de continuar con la compra.
+      </p>
+    </div>
+  </section>
+
+  <section class="resumen-evento">
+    <div class="tarjeta-resumen">
+      <span class="etiqueta">Espectáculo</span>
+      <p>{{ infoCompra.nombreEspectaculo }}</p>
+    </div>
+
+    <div class="tarjeta-resumen">
+      <span class="etiqueta">Escenario</span>
+      <p>{{ infoCompra.nombreEscenario }}</p>
+    </div>
+
+    <div class="tarjeta-resumen">
+      <span class="etiqueta">Tipo de mapa</span>
+      <p>{{ infoCompra.tipoMapa }}</p>
+    </div>
+
+    <div class="tarjeta-resumen">
+      <span class="etiqueta">Modo de selección</span>
+      <p>{{ infoCompra.modoSeleccion }}</p>
+    </div>
+  </section>
+
+  <section class="zona-principal">
+
+    <div class="panel-mapa">
+      <div class="panel-titulo">
+        <h2>Mapa del recinto</h2>
+        <p *ngIf="infoCompra.modoSeleccion === 'PRECISA'">
+          Pulsa sobre una butaca disponible para seleccionarla.
+        </p>
+        <p *ngIf="infoCompra.modoSeleccion === 'ZONA'">
+          Pulsa sobre una zona con entradas disponibles.
+        </p>
+      </div>
+
+      <div class="mapa-wrapper">
+
+        <!-- MODO PRECISA -->
+        <svg *ngIf="infoCompra.modoSeleccion === 'PRECISA'"
+             class="mapa-svg"
+             [attr.viewBox]="infoCompra.tipoMapa === 'SALA_EXPERIMENTAL' ? '0 0 900 500' : '0 0 900 600'">
+
+          <ng-container [ngSwitch]="infoCompra.tipoMapa">
+
+            <!-- AUDITORIO PRINCIPAL -->
+            <ng-container *ngSwitchCase="'AUDITORIO_PRINCIPAL'">
+                <rect x="300" y="26" width="300" height="64" rx="22" class="stage"></rect>
+                <text x="450" y="66" text-anchor="middle" class="texto-stage">ESCENARIO</text>
+
+                <text x="190" y="128" text-anchor="middle" class="texto-zona">Platea Izquierda</text>
+                <text x="450" y="128" text-anchor="middle" class="texto-zona">Platea Central</text>
+                <text x="710" y="128" text-anchor="middle" class="texto-zona">Platea Derecha</text>
+
+                <rect x="70" y="150" width="240" height="260" rx="18" class="bloque"></rect>
+                <rect x="330" y="150" width="240" height="260" rx="18" class="bloque"></rect>
+                <rect x="590" y="150" width="240" height="260" rx="18" class="bloque"></rect>
+
+                <rect x="220" y="470" width="460" height="85" rx="20" class="bloque bloque-anfi"></rect>
+                <text x="450" y="520" text-anchor="middle" class="texto-zona">ANFITEATRO</text>
+            </ng-container>
+
+            <!-- TEATRO CLÁSICO -->
+            <ng-container *ngSwitchCase="'TEATRO_CLASICO'">
+                <path d="M180 30 Q450 0 720 30 L685 105 Q450 78 215 105 Z" class="stage"></path>
+                <text x="450" y="68" text-anchor="middle" class="texto-stage">ESCENARIO</text>
+
+                <text x="450" y="145" text-anchor="middle" class="texto-zona">Patio de butacas</text>
+
+                <rect x="120" y="160" width="660" height="245" rx="25" class="bloque"></rect>
+
+                <rect x="55" y="180" width="75" height="120" rx="18" class="bloque-palco"></rect>
+                <rect x="770" y="180" width="75" height="120" rx="18" class="bloque-palco"></rect>
+
+                <text x="92" y="170" text-anchor="middle" class="texto-zona">PALCO</text>
+                <text x="807" y="170" text-anchor="middle" class="texto-zona">PALCO</text>
+
+                <rect x="170" y="455" width="560" height="72" rx="18" class="bloque-anfiteatro"></rect>
+                <text x="450" y="445" text-anchor="middle" class="texto-zona">ANFITEATRO</text>
+              </ng-container>
+
+            <!-- SALA EXPERIMENTAL -->
+            <ng-container *ngSwitchCase="'SALA_EXPERIMENTAL'">
+              <rect x="290" y="40" width="320" height="68" rx="16" class="stage"></rect>
+              <text x="450" y="82" text-anchor="middle" class="texto-stage">ESPACIO ESCÉNICO</text>
+
+              <text x="450" y="145" text-anchor="middle" class="texto-zona">Gradería frontal</text>
+
+              <rect x="170" y="175" width="240" height="210" rx="20" class="bloque"></rect>
+              <rect x="490" y="175" width="240" height="210" rx="20" class="bloque"></rect>
+
+              <rect x="425" y="175" width="50" height="210" rx="12" class="pasillo-central"></rect>
+              <text x="450" y="280" text-anchor="middle" class="texto-pasillo">Pasillo central</text>
+            </ng-container>
+
+          </ng-container>
+
+          <!-- BUTACAS DINÁMICAS -->
+          <g *ngFor="let butaca of butacas">
+            <circle
+                class="seat"
+                [class.ocupada]="!butaca.disponible"
+                [class.seleccionada]="estaSeleccionada(butaca.idEntrada)"
+                [attr.cx]="butaca.x"
+                [attr.cy]="butaca.y"
+                [attr.r]="infoCompra.tipoMapa === 'TEATRO_CLASICO' ? 8 : 9"
+                (click)="toggleButaca(butaca)">
+            </circle>
+          </g>
+        </svg>
+
+        <!-- MODO ZONA -->
+        <svg *ngIf="infoCompra.modoSeleccion === 'ZONA'" class="mapa-svg" viewBox="0 0 1000 650">
+
+          <ng-container [ngSwitch]="infoCompra.tipoMapa">
+
+            <!-- ESTADIO MUNICIPAL -->
+            <ng-container *ngSwitchCase="'ESTADIO_MUNICIPAL'">
+              <ellipse cx="500" cy="325" rx="430" ry="250" class="exterior-estadio"></ellipse>
+              <ellipse cx="500" cy="325" rx="300" ry="170" class="interior-estadio"></ellipse>
+
+              <rect x="350" y="250" width="300" height="150" rx="20" class="pista"></rect>
+              <text x="500" y="335" text-anchor="middle" class="texto-zona">PISTA / ESCENARIO</text>
+
+              <path class="zona"
+                    [class.seleccionada-zona]="zonaSeleccionada === 1"
+                    [class.ocupada-zona]="disponiblesEnZona(1) <= 0"
+                    d="M250 90 Q500 20 750 90 L700 150 Q500 95 300 150 Z"
+                    (click)="seleccionarZona(1)">
+              </path>
+
+              <path class="zona"
+                    [class.seleccionada-zona]="zonaSeleccionada === 2"
+                    [class.ocupada-zona]="disponiblesEnZona(2) <= 0"
+                    d="M300 500 Q500 555 700 500 L750 560 Q500 630 250 560 Z"
+                    (click)="seleccionarZona(2)">
+              </path>
+
+              <path class="zona"
+                    [class.seleccionada-zona]="zonaSeleccionada === 3"
+                    [class.ocupada-zona]="disponiblesEnZona(3) <= 0"
+                    d="M100 180 Q55 325 100 470 L180 430 Q145 325 180 220 Z"
+                    (click)="seleccionarZona(3)">
+              </path>
+
+              <path class="zona"
+                    [class.seleccionada-zona]="zonaSeleccionada === 4"
+                    [class.ocupada-zona]="disponiblesEnZona(4) <= 0"
+                    d="M900 180 Q945 325 900 470 L820 430 Q855 325 820 220 Z"
+                    (click)="seleccionarZona(4)">
+              </path>
+
+              <text x="500" y="110" text-anchor="middle" class="texto-zona">GRADA NORTE</text>
+              <text x="500" y="545" text-anchor="middle" class="texto-zona">GRADA SUR</text>
+              <text x="145" y="330" text-anchor="middle" transform="rotate(-90 145 330)" class="texto-zona">GRADA OESTE</text>
+              <text x="855" y="330" text-anchor="middle" transform="rotate(90 855 330)" class="texto-zona">GRADA ESTE</text>
+
+              <text x="500" y="132" text-anchor="middle" class="texto-mini">
+                {{ disponiblesEnZona(1) }} disponibles
+              </text>
+              <text x="500" y="568" text-anchor="middle" class="texto-mini">
+                {{ disponiblesEnZona(2) }} disponibles
+              </text>
+              <text x="170" y="330" text-anchor="middle" transform="rotate(-90 170 330)" class="texto-mini">
+                {{ disponiblesEnZona(3) }}
+              </text>
+              <text x="830" y="330" text-anchor="middle" transform="rotate(90 830 330)" class="texto-mini">
+                {{ disponiblesEnZona(4) }}
+              </text>
+            </ng-container>
+
+            <!-- PLAZA ABIERTA -->
+            <ng-container *ngSwitchCase="'PLAZA_ABIERTA'">
+              <rect x="350" y="40" width="300" height="70" rx="18" class="stage"></rect>
+              <text x="500" y="84" text-anchor="middle" class="texto-stage">ESCENARIO</text>
+
+              <rect x="150" y="150" width="700" height="360" rx="25" class="base-plaza"></rect>
+
+              <rect class="zona"
+                    [class.seleccionada-zona]="zonaSeleccionada === 1"
+                    [class.ocupada-zona]="disponiblesEnZona(1) <= 0"
+                    x="250" y="150" width="500" height="90" rx="16"
+                    (click)="seleccionarZona(1)">
+              </rect>
+
+              <rect class="zona"
+                    [class.seleccionada-zona]="zonaSeleccionada === 2"
+                    [class.ocupada-zona]="disponiblesEnZona(2) <= 0"
+                    x="220" y="260" width="560" height="110" rx="16"
+                    (click)="seleccionarZona(2)">
+              </rect>
+
+              <rect class="zona"
+                    [class.seleccionada-zona]="zonaSeleccionada === 3"
+                    [class.ocupada-zona]="disponiblesEnZona(3) <= 0"
+                    x="150" y="260" width="55" height="170" rx="12"
+                    (click)="seleccionarZona(3)">
+              </rect>
+
+              <rect class="zona"
+                    [class.seleccionada-zona]="zonaSeleccionada === 4"
+                    [class.ocupada-zona]="disponiblesEnZona(4) <= 0"
+                    x="795" y="260" width="55" height="170" rx="12"
+                    (click)="seleccionarZona(4)">
+              </rect>
+
+              <rect class="zona"
+                    [class.seleccionada-zona]="zonaSeleccionada === 5"
+                    [class.ocupada-zona]="disponiblesEnZona(5) <= 0"
+                    x="250" y="390" width="500" height="80" rx="16"
+                    (click)="seleccionarZona(5)">
+              </rect>
+
+              <text x="500" y="205" text-anchor="middle" class="texto-zona">DELANTERA</text>
+              <text x="500" y="325" text-anchor="middle" class="texto-zona">GENERAL</text>
+              <text x="177" y="350" text-anchor="middle" transform="rotate(-90 177 350)" class="texto-zona">LATERAL</text>
+              <text x="823" y="350" text-anchor="middle" transform="rotate(90 823 350)" class="texto-zona">LATERAL</text>
+              <text x="500" y="438" text-anchor="middle" class="texto-zona">TRASERA</text>
+
+              <text x="500" y="225" text-anchor="middle" class="texto-mini">
+                {{ disponiblesEnZona(1) }} disponibles
+              </text>
+              <text x="500" y="347" text-anchor="middle" class="texto-mini">
+                {{ disponiblesEnZona(2) }} disponibles
+              </text>
+              <text x="500" y="458" text-anchor="middle" class="texto-mini">
+                {{ disponiblesEnZona(5) }} disponibles
+              </text>
+            </ng-container>
+
+          </ng-container>
+        </svg>
+      </div>
+
+      <div class="leyenda">
+        <div class="leyenda-item">
+          <span class="muestra butaca-libre"></span>
+          <span>Disponible</span>
+        </div>
+        <div class="leyenda-item">
+          <span class="muestra butaca-ocupada"></span>
+          <span>Ocupada</span>
+        </div>
+        <div class="leyenda-item">
+          <span class="muestra butaca-seleccionada"></span>
+          <span>Seleccionada</span>
+        </div>
+      </div>
+    </div>
+
+    <aside class="panel-reserva">
+      <div class="panel-titulo lateral">
+        <h2>Tu selección</h2>
+        <p>Resumen de entradas elegidas</p>
+      </div>
+
+      <div class="reserva-bloque" *ngIf="infoCompra.modoSeleccion === 'PRECISA'">
+        <span class="reserva-etiqueta">Butacas seleccionadas</span>
+        <p class="reserva-valor">{{ idsButacasSeleccionadas.size }}</p>
+      </div>
+
+      <div class="reserva-bloque" *ngIf="infoCompra.modoSeleccion === 'ZONA'">
+        <span class="reserva-etiqueta">Zona seleccionada</span>
+        <p class="reserva-valor" *ngIf="zonaSeleccionada !== null">Zona {{ zonaSeleccionada }}</p>
+        <p class="reserva-vacia" *ngIf="zonaSeleccionada === null">Todavía no has seleccionado ninguna zona</p>
+      </div>
+
+      <div class="reserva-bloque" *ngIf="infoCompra.modoSeleccion === 'ZONA' && zonaSeleccionada !== null">
+        <span class="reserva-etiqueta">Disponibles en la zona</span>
+        <p class="reserva-valor">{{ disponiblesEnZona(zonaSeleccionada) }}</p>
+      </div>
+
+      <div class="reserva-bloque">
+        <span class="reserva-etiqueta">Escenario</span>
+        <p class="reserva-valor texto-secundario">{{ infoCompra.nombreEscenario }}</p>
+      </div>
+
+      <div class="reserva-bloque">
+        <span class="reserva-etiqueta">Modo</span>
+        <p class="reserva-valor texto-secundario">{{ infoCompra.modoSeleccion }}</p>
+      </div>
+
+      <button class="boton-continuar" type="button" (click)="irAComprarEntradas(infoCompra.idEspectaculo)" >
+        Continuar con la compra
+      </button>
+    </aside>
+
+  </section>
+</div>

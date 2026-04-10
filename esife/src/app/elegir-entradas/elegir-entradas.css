@@ -1,0 +1,436 @@
+:host {
+  display: block;
+}
+
+.pagina-entradas {
+  min-height: 100vh;
+  padding: 32px 40px 48px;
+  background:
+    radial-gradient(circle at top left, rgba(34, 197, 94, 0.10), transparent 28%),
+    radial-gradient(circle at top right, rgba(59, 130, 246, 0.08), transparent 24%),
+    linear-gradient(180deg, #f7faf8 0%, #eef5f0 100%);
+  color: #1f2937;
+  box-sizing: border-box;
+}
+
+.cabecera-compra {
+  max-width: 1300px;
+  margin: 0 auto 28px auto;
+  padding: 34px 36px;
+  border-radius: 24px;
+  background: linear-gradient(135deg, #0f172a 0%, #14532d 100%);
+  box-shadow: 0 18px 38px rgba(15, 23, 42, 0.18);
+  color: #ffffff;
+}
+
+.cabecera-texto h1 {
+  margin: 0 0 10px 0;
+  font-size: 2rem;
+  line-height: 1.15;
+  font-weight: 800;
+}
+
+.subtitulo {
+  margin: 0 0 10px 0;
+  color: #bbf7d0;
+  font-size: 0.95rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.descripcion {
+  margin: 0;
+  max-width: 760px;
+  color: rgba(255, 255, 255, 0.88);
+  font-size: 1rem;
+  line-height: 1.6;
+}
+
+.resumen-evento {
+  max-width: 1300px;
+  margin: 0 auto 28px auto;
+  display: grid;
+  grid-template-columns: repeat(4, minmax(180px, 1fr));
+  gap: 16px;
+}
+
+.tarjeta-resumen {
+  padding: 18px 20px;
+  border-radius: 18px;
+  background: rgba(255, 255, 255, 0.9);
+  border: 1px solid rgba(22, 101, 52, 0.10);
+  box-shadow: 0 10px 24px rgba(15, 23, 42, 0.06);
+  backdrop-filter: blur(4px);
+}
+
+.tarjeta-resumen .etiqueta {
+  display: block;
+  margin-bottom: 8px;
+  color: #6b7280;
+  font-size: 0.82rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.tarjeta-resumen p {
+  margin: 0;
+  color: #111827;
+  font-size: 1rem;
+  font-weight: 700;
+}
+
+.zona-principal {
+  max-width: 1300px;
+  margin: 0 auto;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 320px;
+  gap: 24px;
+  align-items: start;
+}
+
+.panel-mapa,
+.panel-reserva {
+  background: rgba(255, 255, 255, 0.92);
+  border: 1px solid rgba(22, 101, 52, 0.10);
+  border-radius: 24px;
+  box-shadow: 0 16px 36px rgba(15, 23, 42, 0.08);
+  backdrop-filter: blur(4px);
+}
+
+.panel-mapa {
+  padding: 24px;
+}
+
+.panel-reserva {
+  padding: 24px;
+  position: sticky;
+  top: 24px;
+}
+
+.panel-titulo {
+  margin-bottom: 18px;
+}
+
+.panel-titulo h2 {
+  margin: 0 0 6px 0;
+  color: #111827;
+  font-size: 1.45rem;
+  font-weight: 800;
+}
+
+.panel-titulo p {
+  margin: 0;
+  color: #6b7280;
+  line-height: 1.5;
+}
+
+.panel-titulo.lateral {
+  margin-bottom: 22px;
+}
+
+.mapa-wrapper {
+  width: 100%;
+  overflow: auto;
+  border-radius: 20px;
+  background: linear-gradient(180deg, #ffffff 0%, #f7faf8 100%);
+  border: 1px solid #e5e7eb;
+  padding: 8px;
+}
+
+
+
+.mapa-svg {
+  display: block;
+  width: 100%;
+  min-width: 850px;
+  height: auto;
+}
+.stage {
+  fill: #111827;
+}
+
+.texto-stage {
+  fill: #ffffff;
+  font-size: 17px;
+  font-weight: 800;
+}
+
+.texto-zona {
+  fill: #374151;
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.texto-mini {
+  fill: #6b7280;
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.titulo-superior {
+  font-size: 18px;
+}
+
+.texto-ayuda {
+  fill: #6b7280;
+  font-size: 13px;
+  font-weight: 500;
+}
+
+.bloque {
+  fill: #f9fafb;
+  stroke: #9ca3af;
+  stroke-width: 2;
+}
+
+.bloque-anfi {
+  fill: #ecfdf5;
+  stroke: #22c55e;
+}
+
+.bloque-palco {
+  fill: #fff7ed;
+  stroke: #f59e0b;
+  stroke-width: 2;
+}
+
+.bloque-anfiteatro {
+  fill: #eff6ff;
+  stroke: #60a5fa;
+  stroke-width: 2;
+}
+
+.exterior-estadio {
+  fill: #f3f4f6;
+  stroke: #9ca3af;
+  stroke-width: 3;
+}
+
+.interior-estadio {
+  fill: #dcfce7;
+  stroke: #22c55e;
+  stroke-width: 3;
+}
+
+.pista {
+  fill: #16a34a;
+  opacity: 0.20;
+}
+
+.base-plaza {
+  fill: #f9fafb;
+  stroke: #9ca3af;
+  stroke-width: 3;
+}
+
+.seat {
+  fill: #d1d5db;
+  stroke: #374151;
+  stroke-width: 1.2;
+  cursor: pointer;
+  transition: transform 0.18s ease, fill 0.18s ease, stroke 0.18s ease;
+  transform-origin: center;
+  transform-box: fill-box;
+  transform-origin: center;
+}
+
+.seat:hover {
+  fill: #86efac;
+}
+
+.seat.ocupada {
+  fill: #9ca3af;
+  stroke: #6b7280;
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+
+.seat.ocupada:hover {
+  transform: none;
+  fill: #9ca3af;
+}
+
+.seat.seleccionada {
+  fill: #22c55e;
+  stroke: #166534;
+  stroke-width: 2;
+}
+
+.zona {
+  fill: #dbeafe;
+  stroke: #1d4ed8;
+  stroke-width: 2;
+  cursor: pointer;
+  transition: fill 0.18s ease, transform 0.18s ease, opacity 0.18s ease;
+}
+
+.zona:hover {
+  fill: #93c5fd;
+}
+
+.seleccionada-zona {
+  fill: #22c55e !important;
+  stroke: #166534 !important;
+}
+
+.ocupada-zona {
+  fill: #9ca3af !important;
+  stroke: #6b7280 !important;
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+.pasillo-central {
+  fill: #e5e7eb;
+  stroke: #cbd5e1;
+  stroke-width: 2;
+}
+.texto-pasillo {
+  fill: #374151;
+  font-size: 11px;
+  font-weight: 700;
+  text-anchor: middle;
+}
+.leyenda {
+  margin-top: 20px;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 18px;
+}
+
+.leyenda-item {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  color: #374151;
+  font-weight: 600;
+  font-size: 0.95rem;
+}
+
+.muestra {
+  width: 18px;
+  height: 18px;
+  border-radius: 999px;
+  display: inline-block;
+  border: 2px solid transparent;
+}
+
+.butaca-libre {
+  background: #d1d5db;
+  border-color: #374151;
+}
+
+.butaca-ocupada {
+  background: #9ca3af;
+  border-color: #6b7280;
+}
+
+.butaca-seleccionada {
+  background: #22c55e;
+  border-color: #166534;
+}
+
+.reserva-bloque {
+  padding: 16px 18px;
+  margin-bottom: 14px;
+  border-radius: 16px;
+  background: #f8fafc;
+  border: 1px solid #e5e7eb;
+}
+
+.reserva-etiqueta {
+  display: block;
+  margin-bottom: 8px;
+  color: #6b7280;
+  font-size: 0.8rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.reserva-valor {
+  margin: 0;
+  color: #111827;
+  font-size: 1.2rem;
+  font-weight: 800;
+}
+
+.reserva-vacia {
+  margin: 0;
+  color: #6b7280;
+  font-size: 0.96rem;
+  line-height: 1.5;
+}
+
+.texto-secundario {
+  font-size: 1rem;
+}
+
+.boton-continuar {
+  width: 100%;
+  margin-top: 10px;
+  padding: 14px 18px;
+  border: none;
+  border-radius: 16px;
+  background: linear-gradient(135deg, #15803d 0%, #22c55e 100%);
+  color: #ffffff;
+  font-size: 1rem;
+  font-weight: 800;
+  cursor: pointer;
+  box-shadow: 0 12px 24px rgba(34, 197, 94, 0.22);
+  transition: transform 0.18s ease, box-shadow 0.18s ease, opacity 0.18s ease;
+}
+
+.boton-continuar:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 16px 28px rgba(34, 197, 94, 0.28);
+}
+
+.boton-continuar:active {
+  transform: translateY(0);
+}
+
+@media (max-width: 1100px) {
+  .zona-principal {
+    grid-template-columns: 1fr;
+  }
+
+  .panel-reserva {
+    position: static;
+  }
+
+  .resumen-evento {
+    grid-template-columns: repeat(2, minmax(180px, 1fr));
+  }
+}
+
+@media (max-width: 700px) {
+  .pagina-entradas {
+    padding: 20px 16px 32px;
+  }
+
+  .cabecera-compra {
+    padding: 24px 20px;
+    border-radius: 20px;
+  }
+
+  .cabecera-texto h1 {
+    font-size: 1.6rem;
+  }
+
+  .resumen-evento {
+    grid-template-columns: 1fr;
+  }
+
+  .panel-mapa,
+  .panel-reserva {
+    padding: 18px;
+    border-radius: 20px;
+  }
+
+  .leyenda {
+    flex-direction: column;
+    gap: 12px;
+  }
+}

@@ -1,11 +1,11 @@
 import { Injectable, inject } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
+import { EntradaMapaDto } from '../elegir-entradas/elegir-entradas';
 
 @Injectable({
   providedIn: 'root'
 })
 export class EspectaculosService {
-
   private readonly http = inject(HttpClient);
 
   getEscenarios() {
@@ -27,4 +27,15 @@ export class EspectaculosService {
   getNumeroDeEntradasComoDto(id: any) {
     return this.http.get(`http://localhost:8080/busqueda/getNumeroDeEntradasComoDto?idEspectaculo=${id}`);
   }
+
+  getInfoCompra(idEspectaculo: any) {
+    return this.http.get(`http://localhost:8080/reservas/infoCompra?idEspectaculo=${idEspectaculo}`);
+  }
+
+  obtenerEntradasMapa(idEspectaculo: number) {
+    return this.http.get<EntradaMapaDto[]>(
+      `http://localhost:8080/reservas/entradasMapa?idEspectaculo=${idEspectaculo}`
+    );
+  }
+
 }

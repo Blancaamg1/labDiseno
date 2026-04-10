@@ -6,6 +6,8 @@ import java.util.List;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 
 import jakarta.persistence.Entity;
+import jakarta.persistence.EnumType;
+import jakarta.persistence.Enumerated;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.Id;
 import jakarta.persistence.OneToMany;
@@ -16,7 +18,10 @@ public class Escenario {
     private Long id;
     private String nombre;
     private String descripcion;
-    
+
+    @Enumerated(EnumType.STRING)
+    private TipoMapa tipo;
+
     @OneToMany(mappedBy = "escenario")
     private List<Espectaculo> espectaculos = new ArrayList<>();
 
@@ -53,5 +58,12 @@ public class Escenario {
         this.espectaculos = espectaculos;
     }
 
+    public TipoMapa getTipo() {
+        return tipo;
+    }
+
+    public void setTipo(TipoMapa tipo) {
+        this.tipo = tipo;
+    }
     
 }

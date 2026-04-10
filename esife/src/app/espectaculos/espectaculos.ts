@@ -2,13 +2,12 @@ import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { EspectaculosService } from './espectaculos.service';
-import { Router } from '@angular/router';
+import { Router,RouterModule } from '@angular/router';
 import { retry } from 'rxjs';
-
 
 @Component({
   selector: 'app-espectaculos',
-  imports: [CommonModule, FormsModule],
+  imports: [CommonModule, FormsModule,RouterModule],
   standalone: true,              
   templateUrl: './espectaculos.html',
   styleUrl: './espectaculos.css',
@@ -161,6 +160,16 @@ export class Espectaculos implements OnInit {
       queryParams: { idEspectaculo: espectaculo?.id }
     });
   }
+
+  irAElegirEntradas(espectaculo: any): void {
+  if (!espectaculo?.id) {
+    return;
+  }
+
+  this.router.navigate(['/elegirEntradas'], {
+    queryParams: { idEspectaculo: espectaculo.id }
+  });
+} 
 
    login() {
   this.router.navigate(['/login'], {

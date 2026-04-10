@@ -42,20 +42,22 @@ export class CompraComponent implements OnInit, AfterViewInit, OnDestroy {
   showPaymentForm = false;
   idEspectaculo?: number;
 
+  idsEntradasSeleccionadas: number[] = [];
   constructor(
     private service: Pagos,
     private cdr: ChangeDetectorRef,
-  ) {}
+  ) { }
 
   ngOnInit(): void {
-    // Se evita acceder a snapshot en constructor para no romper en contextos sin ActivatedRoute.
     this.route?.queryParamMap.subscribe((params) => {
       this.setIdEspectaculo(params.get('idEspectaculo'));
+      this.setIdsEntradas(params.get('idsEntradas'));
     });
 
-    // Fallback en navegador por si el componente se instancia fuera del flujo normal del Router.
     if (this.idEspectaculo === undefined && this.isBrowser) {
-      this.setIdEspectaculo(new URLSearchParams(window.location.search).get('idEspectaculo'));
+      const search = new URLSearchParams(window.location.search);
+      this.setIdEspectaculo(search.get('idEspectaculo'));
+      this.setIdsEntradas(search.get('idsEntradas'));
     }
   }
 
@@ -110,9 +112,10 @@ export class CompraComponent implements OnInit, AfterViewInit, OnDestroy {
         const confirmPayload = {
           paymentIntentId: response.paymentIntent.id,
           clientSecret: this.clientSecret,
-          userToken: localStorage.getItem('authToken'),
-          // Este id llega al backend y evita guardar el Pago con idEspectaculo = 0.
+          userToken: localStorage.getItem('authToken') ?? '',
           idEspectaculo: this.idEspectaculo,
+          cantidadEntradas: this.idsEntradasSeleccionadas.length,
+          idsEntradas: this.idsEntradasSeleccionadas
         };
 
         this.service.confirmarPago(confirmPayload).subscribe({
@@ -217,5 +220,17 @@ export class CompraComponent implements OnInit, AfterViewInit, OnDestroy {
     if (!Number.isNaN(parsed) && parsed > 0) {
       this.idEspectaculo = parsed;
     }
+  }
+
+  private setIdsEntradas(rawIds: string | null): void {
+    if (!rawIds || rawIds.trim() === '') {
+      this.idsEntradasSeleccionadas = [];
+      return;
+    }
+
+    this.idsEntradasSeleccionadas = rawIds
+      .split(',')
+      .map(id => Number(id))
+      .filter(id => !Number.isNaN(id) && id > 0);
   }
 }
