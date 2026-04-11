@@ -27,14 +27,16 @@ export class CompraComponent implements OnInit, AfterViewInit, OnDestroy {
   private readonly platformId = inject(PLATFORM_ID);
   private readonly isBrowser = isPlatformBrowser(this.platformId);
   private readonly route = inject(ActivatedRoute, { optional: true });
-  private readonly publishableKey = 'pk_test_51T92klDfoOsvKeXTdBJDJbXzaRbwz4oNNQF7pNsQbFjV0KLwxVwQvlCHIzXpcY4DEvYozxrSGxup0YGuaQyLYjWl00EHouwGZN';
+  private readonly publishableKey = 'pk_test_51T92jkQdO08Nbk2EpzE4U8yNig7EO2Q6etoAl3aWG2NcKeKX0WQL3X7hmjceOzXyfwUz07Enui94aHT2h159EdA3002ovxoko0';
 
   private stripe: any;
   private elements: any;
   private card: any;
   private isCardMounted = false;
 
-  importe: number = 20.0;
+  precioUnitario: number = 20.0;
+  importe: number = 0;
+  cantidadEntradas: number = 0;
   clientSecret?: string;
   cardError = '';
   isCardReady = false;
@@ -52,15 +54,16 @@ export class CompraComponent implements OnInit, AfterViewInit, OnDestroy {
     this.route?.queryParamMap.subscribe((params) => {
       this.setIdEspectaculo(params.get('idEspectaculo'));
       this.setIdsEntradas(params.get('idsEntradas'));
+      this.actualizarImporte();
     });
 
     if (this.idEspectaculo === undefined && this.isBrowser) {
       const search = new URLSearchParams(window.location.search);
       this.setIdEspectaculo(search.get('idEspectaculo'));
       this.setIdsEntradas(search.get('idsEntradas'));
+      this.actualizarImporte();
     }
   }
-
   ngAfterViewInit(): void {
     this.mountCardElement();
   }
@@ -69,8 +72,18 @@ export class CompraComponent implements OnInit, AfterViewInit, OnDestroy {
     this.destroyCardElement();
   }
 
+  private actualizarImporte(): void {
+    this.cantidadEntradas = this.idsEntradasSeleccionadas.length;
+    this.importe = this.cantidadEntradas * this.precioUnitario;
+  }
+
   irAPago() {
-    let info = {
+    if (this.cantidadEntradas <= 0) {
+      alert('No hay entradas seleccionadas.');
+      return;
+    }
+
+    const info = {
       centimos: Math.floor(this.importe * 100)
     };
 

@@ -5,9 +5,10 @@
 
   <div class="contenedor-pago">
     <div class="pagos">
-      <div class="fila-pago">
-        <label for="importe">Importe:</label>
-        <input id="importe" type="number" [(ngModel)]="importe">
+      <div class="resumen-pago">
+        <p>Precio por entrada: <strong>{{ precioUnitario }} €</strong></p>
+        <p>Cantidad de entradas: <strong>{{ cantidadEntradas }}</strong></p>
+        <p>Total: <strong>{{ importe }} €</strong></p>
         <button class="btnPago" (click)="irAPago()">Ir al pago</button>
       </div>
 
