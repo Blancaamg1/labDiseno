@@ -180,6 +180,7 @@ export class Espectaculos implements OnInit {
   cerrarSesion() {
     if (typeof localStorage !== 'undefined') {
       localStorage.removeItem('loggedUserName');
+      localStorage.removeItem('authToken');
     }
     this.loggedUser = null;
     this.userAvatarUrl = null;

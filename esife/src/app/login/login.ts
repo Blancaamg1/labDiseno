@@ -50,14 +50,17 @@ export class Login {
     };
 
     try {
-      await firstValueFrom(
-        this.http.post<LoginResponse>('http://localhost:8081/users/login', payload, { withCredentials: true })
+      const response = await firstValueFrom(
+        this.http.post<LoginResponse>('http://localhost:8081/users/login', payload)
           .pipe(timeout(10000))
       );
 
       const displayName = this.name.trim();
       if (displayName) {
         localStorage.setItem('loggedUserName', displayName);
+      }
+      if (response?.userId) {
+        localStorage.setItem('authToken', response.userId);
       }
 
       const returnUrl = this.route.snapshot.queryParamMap.get('returnUrl') || '/me';

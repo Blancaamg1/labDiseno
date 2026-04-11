@@ -112,26 +112,23 @@ public class PagosService {
                 pago.setEstado("PAGADO");
                 pago.setFechaPago(LocalDateTime.now());
 
-                DtoUsuarioInfo authenticatedUser = null;
-                if (request.getUserToken() != null && !request.getUserToken().isBlank()) {
-                    authenticatedUser = this.usuarioService.getUserInfo(request.getUserToken());
-                }
-
-                if (authenticatedUser != null) {
-                    pago.setIdUsuario(authenticatedUser.getId() != null ? authenticatedUser.getId() : 0L);
-                    String emailFromUser = authenticatedUser.getEmail();
-                    if (emailFromUser == null || emailFromUser.isBlank()) {
-                        emailFromUser = authenticatedUser.getName().replaceAll("\\s+", ".").toLowerCase(Locale.ROOT) + "@usuario.local";
-                    }
-                    pago.setEmailComprador(emailFromUser);
-                } else {
-                    pago.setIdUsuario(request.getIdUsuario() != null ? request.getIdUsuario() : 0L);
-                    pago.setEmailComprador(
-                        request.getEmailComprador() != null && !request.getEmailComprador().isBlank()
-                            ? request.getEmailComprador()
-                            : "comprador@pendiente.local"
+                if (request.getUserToken() == null || request.getUserToken().isBlank()) {
+                    throw new ResponseStatusException(
+                        HttpStatus.UNAUTHORIZED,
+                        "Se requiere token de usuario para confirmar el pago"
                     );
                 }
+
+                DtoUsuarioInfo authenticatedUser = this.usuarioService.getUserInfo(request.getUserToken());
+                if (authenticatedUser == null || authenticatedUser.getId() == null) {
+                    throw new ResponseStatusException(
+                        HttpStatus.UNAUTHORIZED,
+                        "No se pudo identificar el comprador. Token inválido."
+                    );
+                }
+
+                pago.setIdUsuario(authenticatedUser.getId());
+                pago.setEmailComprador(authenticatedUser.getEmail().trim().toLowerCase(Locale.ROOT));
 
                 pago.setIdEspectaculo(request.getIdEspectaculo() != null ? request.getIdEspectaculo() : 0L);
                 pago.setCantidadEntradas(request.getCantidadEntradas() != null ? request.getCantidadEntradas() : 1);

@@ -13,16 +13,21 @@ export const authGuard: CanActivateFn = (_route, state) => {
     return true;
   }
 
-  return http
-    .get('http://localhost:8081/users/session', { withCredentials: true })
-    .pipe(
-      map(() => true),
-      catchError(() =>
-        of(
-          router.createUrlTree(['/login'], {
-            queryParams: { returnUrl: state.url },
-          })
-        )
+  const token = localStorage.getItem('authToken');
+  if (!token || token.trim() === '') {
+    return router.createUrlTree(['/login'], {
+      queryParams: { returnUrl: state.url },
+    });
+  }
+
+  return http.get(`http://localhost:8081/external/checkToken/${token}`).pipe(
+    map(() => true),
+    catchError(() =>
+      of(
+        router.createUrlTree(['/login'], {
+          queryParams: { returnUrl: state.url },
+        })
       )
-    );
+    )
+  );
 };

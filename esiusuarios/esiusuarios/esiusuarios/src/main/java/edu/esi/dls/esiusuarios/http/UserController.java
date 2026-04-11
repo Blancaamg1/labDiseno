@@ -13,14 +13,14 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.server.ResponseStatusException;
 
+import edu.esi.dls.esiusuarios.dto.UserInfoDto;
 import edu.esi.dls.esiusuarios.services.UserService;
 
 @RestController
-@CrossOrigin(origins = "http://localhost:4200", allowCredentials = "true")
+@CrossOrigin(origins = "http://localhost:4200")
 @RequestMapping("/users")
 public class UserController {
 
@@ -71,6 +71,22 @@ public class UserController {
         result.put("httpSessionId", session.getId());
         return result;
 
+    }
+
+    @GetMapping("/sessionInfo")
+    public UserInfoDto getSessionInfo(HttpSession session) {
+        Object userId = session.getAttribute("userId");
+        if (userId == null) {
+            throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "No active session");
+        }
+
+        UserInfoDto userInfo = this.service.getUserInfo(userId.toString());
+        if (userInfo == null) {
+            session.invalidate();
+            throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Invalid session");
+        }
+
+        return userInfo;
     }
 
     @PostMapping("/logout")

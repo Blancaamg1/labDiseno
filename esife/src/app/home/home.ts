@@ -34,8 +34,6 @@ export class HomeComponent implements OnInit {
       this.applyLoggedUser(cachedUser);
     }
 
-    this.refreshLoggedUser();
-
     this.router.events
       .pipe(filter((event): event is NavigationEnd => event instanceof NavigationEnd))
       .subscribe(() => {
@@ -44,25 +42,14 @@ export class HomeComponent implements OnInit {
   }
 
   private refreshLoggedUser() {
-    this.loadLoggedUser();
-  }
-
-  private loadLoggedUser() {
     if (!this.isBrowser) {
       return;
     }
 
-    this.http
-      .get<{ name: string }>('http://localhost:8081/users/session', { withCredentials: true })
-      .subscribe({
-        next: (session) => {
-          this.applyLoggedUser(session.name);
-          localStorage.setItem('loggedUserName', session.name);
-        },
-        error: () => {
-          this.clearLoggedUser();
-        },
-      });
+    const cachedUser = localStorage.getItem('loggedUserName');
+    if (cachedUser) {
+      this.applyLoggedUser(cachedUser);
+    }
   }
 
   private applyLoggedUser(name: string) {
@@ -74,6 +61,7 @@ export class HomeComponent implements OnInit {
     this.loggedUser = null;
     this.userAvatarUrl = null;
     localStorage.removeItem('loggedUserName');
+    localStorage.removeItem('authToken');
   }
 
   private buildAvatarUrl(name: string): string {
@@ -81,7 +69,7 @@ export class HomeComponent implements OnInit {
   }
 
   logout() {
-    this.http.post('http://localhost:8081/users/logout', {}, { withCredentials: true }).subscribe({
+    this.http.post('http://localhost:8081/users/logout', {}, {}).subscribe({
       next: () => {
         this.clearLoggedUser();
         this.router.navigateByUrl('/');
