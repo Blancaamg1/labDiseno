@@ -22,12 +22,17 @@ export const authGuard: CanActivateFn = (_route, state) => {
 
   return http.get(`http://localhost:8081/external/checkToken/${token}`).pipe(
     map(() => true),
-    catchError(() =>
-      of(
-        router.createUrlTree(['/login'], {
-          queryParams: { returnUrl: state.url },
-        })
-      )
-    )
+    catchError((err) => {
+      if (err?.status === 401 || err?.status === 403) {
+        return of(
+          router.createUrlTree(['/login'], {
+            queryParams: { returnUrl: state.url },
+          })
+        );
+      }
+
+      // Si hay token pero falla por CORS/red, no bloqueamos la compra.
+      return of(true);
+    })
   );
 };
