@@ -1,4 +1,4 @@
-import { Component, OnInit, DestroyRef, inject } from '@angular/core';
+import { Component, OnInit, DestroyRef, inject, ChangeDetectorRef } from '@angular/core';
 import { ActivatedRoute, Router, RouterModule } from '@angular/router';
 import { forkJoin } from 'rxjs';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
@@ -48,31 +48,40 @@ export class ElegirEntradas implements OnInit {
   constructor(
     private route: ActivatedRoute,
     private reservasService: EspectaculosService,
-    private router: Router
+    private router: Router,
+    private cdr: ChangeDetectorRef
   ) { }
 
-  ngOnInit(): void {
-    const idEspectaculo = Number(this.route.snapshot.queryParamMap.get('idEspectaculo'));
+ ngOnInit(): void {
+    this.route.queryParamMap.pipe(
+      takeUntilDestroyed(this.destroyRef)
+    ).subscribe(params => {
+      const idStr = params.get('idEspectaculo');
+      if (idStr) {
+        this.cargarDatos(Number(idStr));
+      }
+    });
+  }
 
+  private cargarDatos(idEspectaculo: number): void {
     forkJoin({
       info: this.reservasService.getInfoCompra(idEspectaculo),
       entradas: this.reservasService.obtenerEntradasMapa(idEspectaculo)
     })
-      .pipe(
-        takeUntilDestroyed(this.destroyRef)
-      )
-      .subscribe({
-        next: ({ info, entradas }) => {
-          this.infoCompra = info;
-          // Generar butacas de relleno
-          const entradasCompletas = this.generarButacasCompletas((info as any).tipoMapa, entradas);
-          this.entradasMapa = entradasCompletas;
-          this.prepararMapa();
-        },
-        error: (err) => {
-          console.error('Error al obtener los escenarios', err);
-        }
-      });
+    .pipe(takeUntilDestroyed(this.destroyRef))
+    .subscribe({
+      next: ({ info, entradas }) => {
+        this.infoCompra = info;
+        const entradasCompletas = this.generarButacasCompletas((info as any).tipoMapa, entradas);
+        this.entradasMapa = entradasCompletas;
+        this.prepararMapa();
+
+        this.cdr.detectChanges(); // <-- AÑADIR ESTA LÍNEA AL FINAL DEL NEXT
+      },
+      error: (err) => {
+        console.error('Error al obtener los escenarios', err);
+      }
+    });
   }
 
   private generarButacasCompletas(tipoMapa: string, entradasConsulta: EntradaMapaDto[]): EntradaMapaDto[] {
