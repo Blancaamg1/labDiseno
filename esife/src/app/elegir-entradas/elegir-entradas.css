@@ -241,15 +241,15 @@
 }
 
 .seat.ocupada {
-  fill: #9ca3af;
-  stroke: #6b7280;
-  opacity: 0.55;
+  fill: #ef4444;
+  stroke: #991b1b;
+  opacity: 0.8;
   cursor: not-allowed;
 }
 
 .seat.ocupada:hover {
   transform: none;
-  fill: #9ca3af;
+  fill: #ef4444;
 }
 
 .seat.seleccionada {
@@ -322,8 +322,8 @@
 }
 
 .butaca-ocupada {
-  background: #9ca3af;
-  border-color: #6b7280;
+  background: #ef4444;
+  border-color: #991b1b;
 }
 
 .butaca-seleccionada {
