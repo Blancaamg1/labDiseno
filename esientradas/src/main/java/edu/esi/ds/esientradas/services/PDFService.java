@@ -1,7 +1,13 @@
 package edu.esi.ds.esientradas.services;
 
+import java.io.ByteArrayOutputStream;
+
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+
+import com.lowagie.text.Document;
+import com.lowagie.text.Paragraph;
+import com.lowagie.text.pdf.PdfWriter;
 
 import edu.esi.ds.esientradas.dao.PDFDao;
 import edu.esi.ds.esientradas.model.PDFEntrada;
@@ -14,21 +20,33 @@ public class PDFService {
     private PDFDao pdfDao;
 
     public byte[] generarEntradaPDF(Pago pago) {
+        try {
+            ByteArrayOutputStream baos = new ByteArrayOutputStream();
 
-        String contenido = "ENTRADA\n"
-                + "Pago ID: " + pago.getId() + "\n"
-                + "Espectaculo: " + pago.getIdEspectaculo() + "\n"
-                + "Entradas: " + pago.getCantidadEntradas();
+            Document document = new Document();
+            PdfWriter.getInstance(document, baos);
 
-        byte[] pdf = contenido.getBytes();
+            document.open();
+            document.add(new Paragraph("ENTRADA"));
+            document.add(new Paragraph(" "));
+            document.add(new Paragraph("Pago ID: " + pago.getId()));
+            document.add(new Paragraph("Espectáculo: " + pago.getIdEspectaculo()));
+            document.add(new Paragraph("Cantidad de entradas: " + pago.getCantidadEntradas()));
+            document.add(new Paragraph("Comprador: " + pago.getEmailComprador()));
+            document.add(new Paragraph("Importe total: " + (pago.getImporteTotalCentimos() / 100.0) + " €"));
+            document.close();
 
-        PDFEntrada entrada = new PDFEntrada();
-        entrada.setIdPago(pago.getId());
-        entrada.setPdf(pdf);
+            byte[] pdf = baos.toByteArray();
 
-        pdfDao.save(entrada);
+            PDFEntrada entrada = new PDFEntrada();
+            entrada.setIdPago(pago.getId());
+            entrada.setPdf(pdf);
 
-        return pdf;
+            pdfDao.save(entrada);
+
+            return pdf;
+        } catch (Exception e) {
+            throw new RuntimeException("Error al generar el PDF de la entrada", e);
+        }
     }
-
 }
