@@ -1,5 +1,7 @@
 package edu.esi.ds.esientradas.dto;
 
+import java.util.List;
+
 public class DtoConfirmarPagoRequest {
 
     private String paymentIntentId;
@@ -9,6 +11,7 @@ public class DtoConfirmarPagoRequest {
     private Long idEspectaculo;
     private Integer cantidadEntradas;
     private String emailComprador;
+    private List<Long> idsEntradas;
 
     public String getUserToken() {
         return userToken;
@@ -64,5 +67,13 @@ public class DtoConfirmarPagoRequest {
 
     public void setEmailComprador(String emailComprador) {
         this.emailComprador = emailComprador;
+    }
+
+    public List<Long> getIdsEntradas() {
+        return idsEntradas;
+    }
+
+    public void setIdsEntradas(List<Long> idsEntradas) {
+        this.idsEntradas = idsEntradas;
     }
 }

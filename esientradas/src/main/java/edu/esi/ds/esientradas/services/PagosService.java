@@ -9,6 +9,7 @@ import org.json.JSONObject;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.server.ResponseStatusException;
 
 import com.stripe.Stripe;
@@ -26,7 +27,6 @@ import edu.esi.ds.esientradas.model.Configuration;
 import edu.esi.ds.esientradas.model.Entrada;
 import edu.esi.ds.esientradas.model.Estado;
 import edu.esi.ds.esientradas.model.Pago;
-
 
 @Service
 public class PagosService {
@@ -48,12 +48,12 @@ public class PagosService {
     @Autowired
     private ConfigurationDao configurationDao;
 
-    public String prepararPago(Long centimos) throws StripeException{
+    public String prepararPago(Long centimos) throws StripeException {
         Stripe.apiKey = this.getStripeSecretKey();
 
         PaymentIntentCreateParams params = new PaymentIntentCreateParams.Builder()
             .setCurrency("eur")
-            .setAmount(centimos) // centimos = Long
+            .setAmount(centimos)
             .build();
 
         PaymentIntent intent = PaymentIntent.create(params);
@@ -64,10 +64,16 @@ public class PagosService {
         return clientSecret;
     }
 
+    @Transactional
     public DtoConfirmarPagoResponse confirmarPago(DtoConfirmarPagoRequest request) {
         if (request == null || request.getPaymentIntentId() == null || request.getPaymentIntentId().isBlank()) {
-            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Se requiere paymentIntentId para confirmar el pago");
+            throw new ResponseStatusException(
+                HttpStatus.BAD_REQUEST,
+                "Se requiere paymentIntentId para confirmar el pago"
+            );
         }
+
+        this.validarEntradasRecibidas(request);
 
         try {
             Stripe.apiKey = this.getStripeSecretKey();
@@ -83,7 +89,8 @@ public class PagosService {
 
             Optional<Pago> existingPago = this.pagoDao.findByStripePaymentIntentId(intent.getId());
             Pago pago = existingPago.orElseGet(Pago::new);
-            boolean yaConfirmado = existingPago.isPresent() && "PAGADO".equalsIgnoreCase(existingPago.get().getEstado());
+            boolean yaConfirmado = existingPago.isPresent()
+                && "PAGADO".equalsIgnoreCase(existingPago.get().getEstado());
 
             if (!yaConfirmado) {
                 pago.setStripePaymentIntentId(intent.getId());
@@ -123,17 +130,24 @@ public class PagosService {
                 if (authenticatedUser == null || authenticatedUser.getId() == null) {
                     throw new ResponseStatusException(
                         HttpStatus.UNAUTHORIZED,
-                        "No se pudo identificar el comprador. Token inválido."
+                        "No se pudo identificar el comprador. Token invalido."
                     );
                 }
 
                 pago.setIdUsuario(authenticatedUser.getId());
-                pago.setEmailComprador(authenticatedUser.getEmail().trim().toLowerCase(Locale.ROOT));
+
+                if (authenticatedUser.getEmail() != null && !authenticatedUser.getEmail().isBlank()) {
+                    pago.setEmailComprador(authenticatedUser.getEmail().trim().toLowerCase(Locale.ROOT));
+                } else if (request.getEmailComprador() != null && !request.getEmailComprador().isBlank()) {
+                    pago.setEmailComprador(request.getEmailComprador().trim().toLowerCase(Locale.ROOT));
+                } else {
+                    pago.setEmailComprador("sin_email@local");
+                }
 
                 pago.setIdEspectaculo(request.getIdEspectaculo() != null ? request.getIdEspectaculo() : 0L);
-                pago.setCantidadEntradas(request.getCantidadEntradas() != null ? request.getCantidadEntradas() : 1);
+                pago.setCantidadEntradas(request.getIdsEntradas().size());
 
-                this.reservarEntradas(request.getIdEspectaculo(), pago.getCantidadEntradas());
+                this.reservarEntradasSeleccionadas(request.getIdEspectaculo(), request.getIdsEntradas());
                 pago = this.pagoDao.save(pago);
             }
 
@@ -152,15 +166,74 @@ public class PagosService {
             response.setEstadoPago(pago.getEstado());
             response.setYaConfirmado(yaConfirmado);
             response.setPdfGenerado(pdfGenerado);
-            response.setMensaje(yaConfirmado ? "Pago ya confirmado previamente" : "Pago confirmado correctamente");
+            response.setMensaje(yaConfirmado
+                ? "Pago ya confirmado previamente"
+                : "Pago confirmado correctamente");
 
             return response;
+
         } catch (ResponseStatusException ex) {
             throw ex;
         } catch (StripeException ex) {
-            throw new ResponseStatusException(HttpStatus.BAD_GATEWAY, "No se pudo validar el pago en Stripe", ex);
+            throw new ResponseStatusException(
+                HttpStatus.BAD_GATEWAY,
+                "No se pudo validar el pago en Stripe",
+                ex
+            );
+        }
+    }
+
+    private void validarEntradasRecibidas(DtoConfirmarPagoRequest request) {
+        if (request.getIdsEntradas() == null || request.getIdsEntradas().isEmpty()) {
+            throw new ResponseStatusException(
+                HttpStatus.BAD_REQUEST,
+                "No se han recibido entradas para confirmar el pago"
+            );
         }
 
+        if (request.getCantidadEntradas() != null
+                && request.getCantidadEntradas().intValue() != request.getIdsEntradas().size()) {
+            throw new ResponseStatusException(
+                HttpStatus.BAD_REQUEST,
+                "La cantidad de entradas no coincide con la seleccion"
+            );
+        }
+    }
+
+    private void reservarEntradasSeleccionadas(Long idEspectaculo, List<Long> idsEntradas) {
+        List<Entrada> entradas = this.entradaDao.findAllById(idsEntradas);
+
+        if (entradas.size() != idsEntradas.size()) {
+            throw new ResponseStatusException(
+                HttpStatus.NOT_FOUND,
+                "Alguna de las entradas seleccionadas no existe"
+            );
+        }
+
+        for (Entrada entrada : entradas) {
+            if (entrada.getEstado() != Estado.DISPONIBLE) {
+                throw new ResponseStatusException(
+                    HttpStatus.CONFLICT,
+                    "Alguna de las entradas seleccionadas ya no esta disponible"
+                );
+            }
+
+            if (idEspectaculo != null
+                    && entrada.getEspectaculo() != null
+                    && entrada.getEspectaculo().getId() != null
+                    && !entrada.getEspectaculo().getId().equals(idEspectaculo)) {
+                throw new ResponseStatusException(
+                    HttpStatus.CONFLICT,
+                    "Alguna entrada no pertenece al espectaculo indicado"
+                );
+            }
+        }
+
+        for (Entrada entrada : entradas) {
+            entrada.setEstado(Estado.VENDIDA);
+        }
+
+        this.entradaDao.saveAll(entradas);
     }
 
     private String getStripeSecretKey() {
@@ -178,26 +251,5 @@ public class PagosService {
         }
 
         return FALLBACK_STRIPE_SECRET_KEY;
-
     }
-
-    private void reservarEntradas(Long idEspectaculo, Integer cantidadSolicitada) {
-        if (idEspectaculo == null) {
-            return;
-        }
-
-        int cantidad = cantidadSolicitada != null && cantidadSolicitada > 0 ? cantidadSolicitada : 1;
-        List<Entrada> entradasDisponibles = this.entradaDao.findByEspectaculoIdAndEstado(idEspectaculo, Estado.DISPONIBLE);
-
-        if (entradasDisponibles.size() < cantidad) {
-            throw new ResponseStatusException(HttpStatus.CONFLICT, "No hay suficientes entradas disponibles para reservar");
-        }
-
-        for (int i = 0; i < cantidad; i++) {
-            entradasDisponibles.get(i).setEstado(Estado.RESERVADA);
-        }
-
-        this.entradaDao.saveAll(entradasDisponibles.subList(0, cantidad));
-    }
-
 }
