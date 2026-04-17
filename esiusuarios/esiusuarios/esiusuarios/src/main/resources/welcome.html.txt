@@ -1,0 +1,10 @@
+<html>
+<body>
+<p>Gracias por registrarte en nuestro sistema de juegos.</p>
+<p>
+Por favor, haz clic
+<a href="http://localhost:8081/users/confirm/#TOKEN#">aqui</a>
+para confirmar la creacion de tu cuenta y poder acceder a todos nuestros servicios.
+</p>
+</body>
+</html>

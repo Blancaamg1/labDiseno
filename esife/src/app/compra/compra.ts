@@ -27,7 +27,7 @@ export class CompraComponent implements OnInit, AfterViewInit, OnDestroy {
   private readonly platformId = inject(PLATFORM_ID);
   private readonly isBrowser = isPlatformBrowser(this.platformId);
   private readonly route = inject(ActivatedRoute, { optional: true });
-  private readonly publishableKey = 'pk_test_51T92jkQdO08Nbk2EpzE4U8yNig7EO2Q6etoAl3aWG2NcKeKX0WQL3X7hmjceOzXyfwUz07Enui94aHT2h159EdA3002ovxoko0';
+  private readonly publishableKey = 'pk_test_51T92klDfoOsvKeXTdBJDJbXzaRbwz4oNNQF7pNsQbFjV0KLwxVwQvlCHIzXpcY4DEvYozxrSGxup0YGuaQyLYjWl00EHouwGZN';
 
   private stripe: any;
   private elements: any;

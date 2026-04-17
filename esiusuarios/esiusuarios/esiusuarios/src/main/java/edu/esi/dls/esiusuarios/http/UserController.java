@@ -10,6 +10,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.CrossOrigin;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -151,6 +152,21 @@ public class UserController {
 
         return result;
 
+    }
+
+    @GetMapping("/confirm/{tokenId}")
+    public String confirm(@PathVariable String tokenId) {
+        if (tokenId == null || tokenId.isBlank()) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Token de confirmación requerido");
+        }
+
+        try {
+            return this.service.confirm(tokenId.trim());
+        } catch (IllegalArgumentException ex) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, ex.getMessage());
+        } catch (IllegalStateException ex) {
+            throw new ResponseStatusException(HttpStatus.CONFLICT, ex.getMessage());
+        }
     }
 
     private boolean isValidUsername(String username) {

@@ -1,9 +1,15 @@
 package edu.esi.dls.esiusuarios.model;
 
+import java.util.ArrayList;
+import java.util.List;
+
+import jakarta.persistence.CascadeType;
+import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
+import jakarta.persistence.OneToMany;
 import jakarta.persistence.Table;
 
 @Entity
@@ -13,10 +19,23 @@ public class User {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
+
+    @Column(nullable = false, unique = true, length = 80)
     private String name;
+
+    @Column(nullable = false, unique = true, length = 140)
     private String email;
+
+    @Column(nullable = false)
     private String password;
+
+    @Column(nullable = false, unique = true, length = 120)
     private String token;
+
+    private Long validationDate;
+
+    @OneToMany(mappedBy = "user", cascade = CascadeType.ALL, orphanRemoval = true)
+    private List<Token> confirmationTokens = new ArrayList<>();
 
     public User() {
     }
@@ -26,6 +45,7 @@ public class User {
         this.email = null;
         this.password = password;
         this.token = token;
+        this.validationDate = System.currentTimeMillis();
     }
 
     public User(String name, String email, String password, String token) {
@@ -33,6 +53,15 @@ public class User {
         this.email = email;
         this.password = password;
         this.token = token;
+        this.validationDate = null;
+    }
+
+    public User(String name, String email, String password, String token, Long validationDate) {
+        this.name = name;
+        this.email = email;
+        this.password = password;
+        this.token = token;
+        this.validationDate = validationDate;
     }
 
     public String getName() {
@@ -73,5 +102,26 @@ public class User {
 
     public void setId(Long id) {
         this.id = id;
+    }
+
+    public Long getValidationDate() {
+        return validationDate;
+    }
+
+    public void setValidationDate(Long validationDate) {
+        this.validationDate = validationDate;
+    }
+
+    public List<Token> getConfirmationTokens() {
+        return confirmationTokens;
+    }
+
+    public void setConfirmationTokens(List<Token> confirmationTokens) {
+        this.confirmationTokens = confirmationTokens;
+    }
+
+    public void addConfirmationToken(Token confirmationToken) {
+        this.confirmationTokens.add(confirmationToken);
+        confirmationToken.setUser(this);
     }
 }
