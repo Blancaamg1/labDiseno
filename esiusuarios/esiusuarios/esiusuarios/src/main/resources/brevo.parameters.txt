@@ -2,7 +2,7 @@
   "endpoint": "https://api.brevo.com/v3/smtp/email",
   "headers": [
     "accept: application/json",
-    "api-key: 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",
+    "api-key: ",
     "content-type: application/json"
   ],
   "sender": {
