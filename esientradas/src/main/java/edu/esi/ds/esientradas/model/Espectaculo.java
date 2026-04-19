@@ -18,10 +18,16 @@ import jakarta.persistence.OneToMany;
 
 @Entity
 public class Espectaculo {
-    @Id @GeneratedValue(strategy = GenerationType.IDENTITY)
+
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
+
     private String artista;
     private LocalDateTime fecha;
+
+    private Boolean usaColaVirtual;
+    private LocalDateTime fechaAperturaCola;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "escenario_id", nullable = false)
@@ -31,7 +37,7 @@ public class Espectaculo {
     private List<Entrada> entradas = new ArrayList<>();
 
     public Long getId() {
-        return id;
+        return this.id;
     }
 
     public void setId(Long id) {
@@ -39,7 +45,7 @@ public class Espectaculo {
     }
 
     public String getArtista() {
-        return artista;
+        return this.artista;
     }
 
     public void setArtista(String artista) {
@@ -47,16 +53,32 @@ public class Espectaculo {
     }
 
     public LocalDateTime getFecha() {
-        return fecha;
+        return this.fecha;
     }
 
     public void setFecha(LocalDateTime fecha) {
         this.fecha = fecha;
     }
 
+    public Boolean getUsaColaVirtual() {
+        return this.usaColaVirtual;
+    }
+
+    public void setUsaColaVirtual(Boolean usaColaVirtual) {
+        this.usaColaVirtual = usaColaVirtual;
+    }
+
+    public LocalDateTime getFechaAperturaCola() {
+        return this.fechaAperturaCola;
+    }
+
+    public void setFechaAperturaCola(LocalDateTime fechaAperturaCola) {
+        this.fechaAperturaCola = fechaAperturaCola;
+    }
+
     @JsonIgnore
     public Escenario getEscenario() {
-        return escenario;
+        return this.escenario;
     }
 
     public void setEscenario(Escenario escenario) {
@@ -65,11 +87,10 @@ public class Espectaculo {
 
     @JsonIgnore
     public List<Entrada> getEntradas() {
-        return entradas;
+        return this.entradas;
     }
 
     public void setEntradas(List<Entrada> entradas) {
         this.entradas = entradas;
     }
-
 }

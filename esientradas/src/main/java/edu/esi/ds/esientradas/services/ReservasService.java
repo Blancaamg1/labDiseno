@@ -1,18 +1,24 @@
 package edu.esi.ds.esientradas.services;
 
+import java.time.LocalDateTime;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
+import java.util.Optional;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.web.server.ResponseStatusException;
 
+import edu.esi.ds.esientradas.dao.ColaVirtualDao;
 import edu.esi.ds.esientradas.dao.EntradaDao;
 import edu.esi.ds.esientradas.dao.EspectaculoDao;
 import edu.esi.ds.esientradas.dao.TokenDao;
 import edu.esi.ds.esientradas.dto.DtoCompraInfo;
 import edu.esi.ds.esientradas.dto.DtoEntradaMapa;
+import edu.esi.ds.esientradas.dto.DtoUsuarioInfo;
+import edu.esi.ds.esientradas.model.ColaVirtual;
 import edu.esi.ds.esientradas.model.DeZona;
 import edu.esi.ds.esientradas.model.Entrada;
 import edu.esi.ds.esientradas.model.Escenario;
@@ -34,25 +40,80 @@ public class ReservasService {
     @Autowired
     private TokenDao tokenDao;
 
+    @Autowired
+    private ColaVirtualDao colaVirtualDao;
+
+    @Autowired
+    private UsuarioService usuarioService;
+
     @Transactional
-    public Long reservar(Long idEntrada, String sessionId) {
-        {
-            Entrada entrada = this.entradaDao.findById(idEntrada)
-                    .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Entrada no encontrada"));
+    public Long reservar(Long idEntrada, String sessionId, String userToken) {
+        Entrada entrada = this.entradaDao.findById(idEntrada)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Entrada no encontrada"));
 
-            if (entrada.getEstado() != Estado.DISPONIBLE) {
-                throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Entrada no disponible");
-            }
-            // entrada.setEstado(Estado.RESERVADA);
-            // this.entradaDao.save(entrada);
+        this.validarAccesoPorCola(entrada, userToken);
 
-            Token token = new Token();
-            token.setEntrada(entrada);
-            token.setSessionId(sessionId);
-            this.tokenDao.save(token);
+        if (entrada.getEstado() != Estado.DISPONIBLE) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Entrada no disponible");
+        }
 
-            this.entradaDao.updateEstado(idEntrada, Estado.RESERVADA);
-            return entrada.getPrecio();
+        Token token = new Token();
+        token.setEntrada(entrada);
+        token.setSessionId(sessionId);
+        this.tokenDao.save(token);
+
+        this.entradaDao.updateEstado(idEntrada, Estado.RESERVADA);
+        return entrada.getPrecio();
+    }
+
+    private void validarAccesoPorCola(Entrada entrada, String userToken) {
+        Espectaculo espectaculo = entrada.getEspectaculo();
+
+        if (espectaculo == null) {
+            return;
+        }
+
+        if (espectaculo.getUsaColaVirtual() == null || !espectaculo.getUsaColaVirtual()) {
+            return;
+        }
+
+        if (userToken == null || userToken.isBlank()) {
+            throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Se requiere token de usuario");
+        }
+
+        DtoUsuarioInfo usuario = this.usuarioService.getUserInfo(userToken);
+
+        if (usuario == null || usuario.getId() == null) {
+            throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Usuario no identificado");
+        }
+
+        Optional<ColaVirtual> colaOpt = this.colaVirtualDao.findByIdEspectaculoAndIdUsuarioAndEstadoIn(
+                espectaculo.getId(),
+                usuario.getId(),
+                Arrays.asList("ACTIVO", "ESPERANDO")
+        );
+
+        if (colaOpt.isEmpty()) {
+            throw new ResponseStatusException(
+                    HttpStatus.FORBIDDEN,
+                    "No estas en la cola virtual de este espectaculo"
+            );
+        }
+
+        ColaVirtual cola = colaOpt.get();
+
+        if (!"ACTIVO".equals(cola.getEstado())) {
+            throw new ResponseStatusException(
+                    HttpStatus.FORBIDDEN,
+                    "Aun no ha llegado tu turno para comprar"
+            );
+        }
+
+        if (cola.getFechaFinTurno() == null || cola.getFechaFinTurno().isBefore(LocalDateTime.now())) {
+            throw new ResponseStatusException(
+                    HttpStatus.FORBIDDEN,
+                    "Tu turno de compra ha caducado"
+            );
         }
     }
 
@@ -83,7 +144,7 @@ public class ReservasService {
     }
 
     public DtoCompraInfo obtenerInfoCompra(Long idEspectaculo) {
-        Espectaculo espectaculo = espectaculoDao.findById(idEspectaculo)
+        Espectaculo espectaculo = this.espectaculoDao.findById(idEspectaculo)
                 .orElseThrow(() -> new RuntimeException("No existe el espectáculo con id " + idEspectaculo));
 
         Escenario escenario = espectaculo.getEscenario();
@@ -106,7 +167,7 @@ public class ReservasService {
         } else if (hayZonas && !hayPrecisas) {
             modoSeleccion = "ZONA";
         } else {
-            String tipoMapa = resolverTipoMapa(escenario);
+            String tipoMapa = this.resolverTipoMapa(escenario);
             if ("ESTADIO_MUNICIPAL".equals(tipoMapa) || "PLAZA_ABIERTA".equals(tipoMapa)) {
                 modoSeleccion = "ZONA";
             } else {
@@ -119,27 +180,25 @@ public class ReservasService {
         dto.setNombreEspectaculo(espectaculo.getArtista());
         dto.setIdEscenario(escenario.getId());
         dto.setNombreEscenario(escenario.getNombre());
-        dto.setTipoMapa(resolverTipoMapa(escenario));
+        dto.setTipoMapa(this.resolverTipoMapa(escenario));
         dto.setModoSeleccion(modoSeleccion);
+        dto.setUsaColaVirtual(espectaculo.getUsaColaVirtual());
+        dto.setFechaAperturaCola(espectaculo.getFechaAperturaCola());
 
         return dto;
     }
 
     @Transactional
     public List<DtoEntradaMapa> obtenerEntradasMapa(Long idEspectaculo) {
-        Espectaculo espectaculo = espectaculoDao.findById(idEspectaculo)
+        Espectaculo espectaculo = this.espectaculoDao.findById(idEspectaculo)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Espectáculo no encontrado"));
 
-        List<Entrada> entradas = entradaDao.findByEspectaculoId(espectaculo.getId());
-        // ajusta este método al nombre real de tu DAO
-
+        List<Entrada> entradas = this.entradaDao.findByEspectaculoId(espectaculo.getId());
         List<DtoEntradaMapa> resultado = new ArrayList<DtoEntradaMapa>();
 
         for (Entrada entrada : entradas) {
             DtoEntradaMapa dto = new DtoEntradaMapa();
             dto.setIdEntrada(entrada.getId());
-
-            // CAMBIA "LIBRE" por el estado real que uses en tu proyecto
             dto.setDisponible(entrada.getEstado() == Estado.DISPONIBLE);
 
             if (entrada instanceof Precisa) {

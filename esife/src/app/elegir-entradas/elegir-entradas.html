@@ -32,7 +32,86 @@
     </div>
   </section>
 
-  <section class="zona-principal">
+  <!-- BLOQUE COLA VIRTUAL -->
+  <section *ngIf="usaColaVirtual && !puedeComprar" class="zona-principal">
+    <div class="panel-mapa">
+      <div class="panel-titulo">
+        <h2>Cola virtual</h2>
+        <p>Este espectáculo tiene mucha demanda. Debes esperar tu turno para acceder a la compra.</p>
+      </div>
+
+      <div class="resumen-evento">
+        <div class="tarjeta-resumen">
+          <span class="etiqueta">Estado</span>
+          <p>{{ estadoCola?.estado || 'SIN_COLA' }}</p>
+        </div>
+
+        <div class="tarjeta-resumen">
+          <span class="etiqueta">Posición</span>
+          <p>{{ estadoCola?.posicion ?? '-' }}</p>
+        </div>
+
+        <div class="tarjeta-resumen">
+          <span class="etiqueta">Personas delante</span>
+          <p>{{ estadoCola?.personasDelante ?? '-' }}</p>
+        </div>
+
+        <div class="tarjeta-resumen">
+          <span class="etiqueta">Tiempo restante</span>
+          <p>{{ estadoCola?.segundosRestantes ?? 0 }} s</p>
+        </div>
+      </div>
+
+      <div class="reserva-bloque" *ngIf="estadoCola?.mensaje">
+        <span class="reserva-etiqueta">Mensaje</span>
+        <p class="reserva-valor texto-secundario">{{ estadoCola?.mensaje }}</p>
+      </div>
+
+      <div class="reserva-bloque" *ngIf="!estaEnCola">
+        <span class="reserva-etiqueta">Acceso</span>
+        <p class="reserva-vacia">Todavía no estás en la cola virtual.</p>
+      </div>
+
+      <div style="margin-top: 20px;">
+        <button
+          class="boton-continuar"
+          type="button"
+          *ngIf="!estaEnCola"
+          (click)="entrarEnCola(infoCompra.idEspectaculo)">
+          Entrar en cola
+        </button>
+      </div>
+    </div>
+
+    <aside class="panel-reserva">
+      <div class="panel-titulo lateral">
+        <h2>Estado de acceso</h2>
+        <p>Información de tu turno</p>
+      </div>
+
+      <div class="reserva-bloque">
+        <span class="reserva-etiqueta">Cola virtual</span>
+        <p class="reserva-valor texto-secundario">
+          {{ estaEnCola ? 'Dentro de la cola' : 'Pendiente de entrar' }}
+        </p>
+      </div>
+
+      <div class="reserva-bloque">
+        <span class="reserva-etiqueta">Puede comprar</span>
+        <p class="reserva-valor texto-secundario">
+          {{ puedeComprar ? 'Sí' : 'No' }}
+        </p>
+      </div>
+
+      <div class="reserva-bloque" *ngIf="estadoCola?.tokenTurno">
+        <span class="reserva-etiqueta">Token de turno</span>
+        <p class="reserva-valor texto-secundario">{{ estadoCola?.tokenTurno }}</p>
+      </div>
+    </aside>
+  </section>
+
+  <!-- BLOQUE NORMAL DE COMPRA -->
+  <section class="zona-principal" *ngIf="!usaColaVirtual || puedeComprar">
 
     <div class="panel-mapa">
       <div class="panel-titulo">
@@ -56,39 +135,39 @@
 
             <!-- AUDITORIO PRINCIPAL -->
             <ng-container *ngSwitchCase="'AUDITORIO_PRINCIPAL'">
-                <rect x="300" y="26" width="300" height="64" rx="22" class="stage"></rect>
-                <text x="450" y="66" text-anchor="middle" class="texto-stage">ESCENARIO</text>
+              <rect x="300" y="26" width="300" height="64" rx="22" class="stage"></rect>
+              <text x="450" y="66" text-anchor="middle" class="texto-stage">ESCENARIO</text>
 
-                <text x="190" y="128" text-anchor="middle" class="texto-zona">Platea Izquierda</text>
-                <text x="450" y="128" text-anchor="middle" class="texto-zona">Platea Central</text>
-                <text x="710" y="128" text-anchor="middle" class="texto-zona">Platea Derecha</text>
+              <text x="190" y="128" text-anchor="middle" class="texto-zona">Platea Izquierda</text>
+              <text x="450" y="128" text-anchor="middle" class="texto-zona">Platea Central</text>
+              <text x="710" y="128" text-anchor="middle" class="texto-zona">Platea Derecha</text>
 
-                <rect x="70" y="150" width="240" height="260" rx="18" class="bloque"></rect>
-                <rect x="330" y="150" width="240" height="260" rx="18" class="bloque"></rect>
-                <rect x="590" y="150" width="240" height="260" rx="18" class="bloque"></rect>
+              <rect x="70" y="150" width="240" height="260" rx="18" class="bloque"></rect>
+              <rect x="330" y="150" width="240" height="260" rx="18" class="bloque"></rect>
+              <rect x="590" y="150" width="240" height="260" rx="18" class="bloque"></rect>
 
-                <rect x="220" y="470" width="460" height="85" rx="20" class="bloque bloque-anfi"></rect>
-                <text x="450" y="520" text-anchor="middle" class="texto-zona">ANFITEATRO</text>
+              <rect x="220" y="470" width="460" height="85" rx="20" class="bloque bloque-anfi"></rect>
+              <text x="450" y="520" text-anchor="middle" class="texto-zona">ANFITEATRO</text>
             </ng-container>
 
             <!-- TEATRO CLÁSICO -->
             <ng-container *ngSwitchCase="'TEATRO_CLASICO'">
-                <path d="M180 30 Q450 0 720 30 L685 105 Q450 78 215 105 Z" class="stage"></path>
-                <text x="450" y="68" text-anchor="middle" class="texto-stage">ESCENARIO</text>
+              <path d="M180 30 Q450 0 720 30 L685 105 Q450 78 215 105 Z" class="stage"></path>
+              <text x="450" y="68" text-anchor="middle" class="texto-stage">ESCENARIO</text>
 
-                <text x="450" y="145" text-anchor="middle" class="texto-zona">Patio de butacas</text>
+              <text x="450" y="145" text-anchor="middle" class="texto-zona">Patio de butacas</text>
 
-                <rect x="120" y="160" width="660" height="245" rx="25" class="bloque"></rect>
+              <rect x="120" y="160" width="660" height="245" rx="25" class="bloque"></rect>
 
-                <rect x="55" y="180" width="75" height="120" rx="18" class="bloque-palco"></rect>
-                <rect x="770" y="180" width="75" height="120" rx="18" class="bloque-palco"></rect>
+              <rect x="55" y="180" width="75" height="120" rx="18" class="bloque-palco"></rect>
+              <rect x="770" y="180" width="75" height="120" rx="18" class="bloque-palco"></rect>
 
-                <text x="92" y="170" text-anchor="middle" class="texto-zona">PALCO</text>
-                <text x="807" y="170" text-anchor="middle" class="texto-zona">PALCO</text>
+              <text x="92" y="170" text-anchor="middle" class="texto-zona">PALCO</text>
+              <text x="807" y="170" text-anchor="middle" class="texto-zona">PALCO</text>
 
-                <rect x="170" y="455" width="560" height="72" rx="18" class="bloque-anfiteatro"></rect>
-                <text x="450" y="445" text-anchor="middle" class="texto-zona">ANFITEATRO</text>
-              </ng-container>
+              <rect x="170" y="455" width="560" height="72" rx="18" class="bloque-anfiteatro"></rect>
+              <text x="450" y="445" text-anchor="middle" class="texto-zona">ANFITEATRO</text>
+            </ng-container>
 
             <!-- SALA EXPERIMENTAL -->
             <ng-container *ngSwitchCase="'SALA_EXPERIMENTAL'">
@@ -109,13 +188,13 @@
           <!-- BUTACAS DINÁMICAS -->
           <g *ngFor="let butaca of butacas">
             <circle
-                class="seat"
-                [class.ocupada]="!butaca.disponible"
-                [class.seleccionada]="estaSeleccionada(butaca.idEntrada)"
-                [attr.cx]="butaca.x"
-                [attr.cy]="butaca.y"
-                [attr.r]="infoCompra.tipoMapa === 'TEATRO_CLASICO' ? 8 : 9"
-                (click)="toggleButaca(butaca)">
+              class="seat"
+              [class.ocupada]="!butaca.disponible"
+              [class.seleccionada]="estaSeleccionada(butaca.idEntrada)"
+              [attr.cx]="butaca.x"
+              [attr.cy]="butaca.y"
+              [attr.r]="infoCompra.tipoMapa === 'TEATRO_CLASICO' ? 8 : 9"
+              (click)="toggleButaca(butaca)">
             </circle>
           </g>
         </svg>
@@ -291,7 +370,7 @@
         <p class="reserva-valor texto-secundario">{{ infoCompra.modoSeleccion }}</p>
       </div>
 
-      <button class="boton-continuar" type="button" (click)="irAComprarEntradas(infoCompra.idEspectaculo)" >
+      <button class="boton-continuar" type="button" (click)="irAComprarEntradas(infoCompra.idEspectaculo)">
         Continuar con la compra
       </button>
     </aside>

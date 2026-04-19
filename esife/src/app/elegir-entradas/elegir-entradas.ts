@@ -1,10 +1,9 @@
-import { Component, OnInit, DestroyRef, inject, ChangeDetectorRef } from '@angular/core';
+import { Component, OnInit, OnDestroy, DestroyRef, inject, ChangeDetectorRef } from '@angular/core';
 import { ActivatedRoute, Router, RouterModule } from '@angular/router';
 import { forkJoin } from 'rxjs';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { EspectaculosService } from '../espectaculos/espectaculos.service';
 import { CommonModule } from '@angular/common';
-
 
 export interface EntradaMapaDto {
   idEntrada: number;
@@ -25,6 +24,18 @@ export interface ZonaResumen {
   disponibles: number;
 }
 
+export interface ColaEstadoDto {
+  idEspectaculo: number;
+  idUsuario: number;
+  posicion: number;
+  personasDelante: number;
+  estado: string;
+  puedeComprar: boolean;
+  tokenTurno: string;
+  segundosRestantes: number;
+  mensaje: string;
+}
+
 @Component({
   selector: 'app-elegir-entradas',
   templateUrl: './elegir-entradas.html',
@@ -32,7 +43,7 @@ export interface ZonaResumen {
   imports: [CommonModule, RouterModule],
   styleUrls: ['./elegir-entradas.css']
 })
-export class ElegirEntradas implements OnInit {
+export class ElegirEntradas implements OnInit, OnDestroy {
 
   infoCompra: any;
   entradasMapa: EntradaMapaDto[] = [];
@@ -43,6 +54,12 @@ export class ElegirEntradas implements OnInit {
   idsButacasSeleccionadas = new Set<number>();
   zonaSeleccionada: number | null = null;
 
+  usaColaVirtual = false;
+  puedeComprar = true;
+  estaEnCola = false;
+  estadoCola: ColaEstadoDto | null = null;
+  pollingCola: any = null;
+
   private destroyRef = inject(DestroyRef);
 
   constructor(
@@ -52,15 +69,22 @@ export class ElegirEntradas implements OnInit {
     private cdr: ChangeDetectorRef
   ) { }
 
- ngOnInit(): void {
-    this.route.queryParamMap.pipe(
-      takeUntilDestroyed(this.destroyRef)
-    ).subscribe(params => {
-      const idStr = params.get('idEspectaculo');
-      if (idStr) {
-        this.cargarDatos(Number(idStr));
-      }
-    });
+  ngOnInit(): void {
+    this.route.queryParamMap
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe(params => {
+        const idStr = params.get('idEspectaculo');
+        if (idStr) {
+          this.cargarDatos(Number(idStr));
+        }
+      });
+  }
+
+  ngOnDestroy(): void {
+    if (this.pollingCola) {
+      clearInterval(this.pollingCola);
+      this.pollingCola = null;
+    }
   }
 
   private cargarDatos(idEspectaculo: number): void {
@@ -73,14 +97,82 @@ export class ElegirEntradas implements OnInit {
       next: ({ info, entradas }) => {
         this.infoCompra = this.resolverModoVisual(info, entradas ?? []);
         this.entradasMapa = this.filtrarEntradasReales(entradas ?? []);
-        this.prepararMapa();
 
-        this.cdr.detectChanges(); // <-- AÑADIR ESTA LÍNEA AL FINAL DEL NEXT
+        this.usaColaVirtual = this.infoCompra?.usaColaVirtual === true;
+        this.puedeComprar = !this.usaColaVirtual;
+        this.estaEnCola = false;
+        this.estadoCola = null;
+
+        if (!this.usaColaVirtual) {
+          this.prepararMapa();
+        }
+
+        this.cdr.detectChanges();
       },
       error: (err) => {
-        console.error('Error al obtener los escenarios', err);
+        console.error('Error al obtener datos de compra', err);
       }
     });
+  }
+
+  entrarEnCola(idEspectaculo: number): void {
+    const userToken = localStorage.getItem('authToken');
+
+    if (!userToken) {
+      alert('No se ha encontrado el token del usuario.');
+      return;
+    }
+
+    this.reservasService.entrarEnCola(idEspectaculo, userToken).subscribe({
+      next: (respuesta: ColaEstadoDto) => {
+        this.estaEnCola = true;
+        this.estadoCola = respuesta;
+
+        if (respuesta?.estado === 'ACTIVO' || respuesta?.puedeComprar === true) {
+          this.puedeComprar = true;
+          this.prepararMapa();
+        } else {
+          this.puedeComprar = false;
+        }
+
+        this.iniciarPollingCola(idEspectaculo, userToken);
+        this.cdr.detectChanges();
+      },
+      error: (err) => {
+        console.error('Error al entrar en cola', err);
+        alert('No se pudo entrar en la cola.');
+      }
+    });
+  }
+
+  iniciarPollingCola(idEspectaculo: number, userToken: string): void {
+    if (this.pollingCola) {
+      clearInterval(this.pollingCola);
+    }
+
+    this.pollingCola = setInterval(() => {
+      this.reservasService.obtenerEstadoCola(idEspectaculo, userToken).subscribe({
+        next: (estado: ColaEstadoDto) => {
+          this.estadoCola = estado;
+          this.estaEnCola = true;
+
+          if (estado?.estado === 'ACTIVO' || estado?.puedeComprar === true) {
+            this.puedeComprar = true;
+            this.prepararMapa();
+
+            clearInterval(this.pollingCola);
+            this.pollingCola = null;
+          } else {
+            this.puedeComprar = false;
+          }
+
+          this.cdr.detectChanges();
+        },
+        error: (err) => {
+          console.error('Error consultando estado de cola', err);
+        }
+      });
+    }, 5000);
   }
 
   private resolverModoVisual(info: any, entradas: EntradaMapaDto[]): any {
@@ -90,17 +182,11 @@ export class ElegirEntradas implements OnInit {
     const soportaZonaVisual = tipoMapa === 'ESTADIO_MUNICIPAL' || tipoMapa === 'PLAZA_ABIERTA';
 
     if (soportaZonaVisual && (info?.modoSeleccion === 'PRECISA' || !info?.modoSeleccion) && zonas > precisas) {
-      return {
-        ...info,
-        modoSeleccion: 'ZONA'
-      };
+      return { ...info, modoSeleccion: 'ZONA' };
     }
 
     if (info?.modoSeleccion === 'ZONA' && precisas > 0 && zonas === 0) {
-      return {
-        ...info,
-        modoSeleccion: 'PRECISA'
-      };
+      return { ...info, modoSeleccion: 'PRECISA' };
     }
 
     return info;
@@ -144,11 +230,7 @@ export class ElegirEntradas implements OnInit {
       for (const entrada of this.entradasMapa) {
         if (entrada.fila != null && entrada.columna != null && entrada.planta != null) {
           const pos = this.calcularPosicionButaca(entrada);
-          this.butacas.push({
-            ...entrada,
-            x: pos.x,
-            y: pos.y
-          });
+          this.butacas.push({ ...entrada, x: pos.x, y: pos.y });
         } else if (entrada.zona != null) {
           const zona = entrada.zona;
           const indice = indicePorZona.get(zona) ?? 0;
@@ -160,11 +242,7 @@ export class ElegirEntradas implements OnInit {
             totalPorZona.get(zona) ?? 1
           );
 
-          this.butacas.push({
-            ...entrada,
-            x: pos.x,
-            y: pos.y
-          });
+          this.butacas.push({ ...entrada, x: pos.x, y: pos.y });
         }
       }
     } else {
@@ -252,38 +330,22 @@ export class ElegirEntradas implements OnInit {
     const columna = this.normalizarIndice(entrada.columna, rango.minColumna);
 
     switch (this.infoCompra.tipoMapa) {
-
       case 'AUDITORIO_PRINCIPAL': {
         const dims = this.obtenerDimensionesPlanta(planta);
 
-        if (planta === 0) {
-          return this.colocarEnRejilla(70, 150, 240, 260, fila, columna, dims.filas, dims.columnas, 26, 24);
-        }
-
-        if (planta === 1) {
-          return this.colocarEnRejilla(330, 150, 240, 260, fila, columna, dims.filas, dims.columnas, 26, 24);
-        }
-
-        if (planta === 2) {
-          return this.colocarEnRejilla(590, 150, 240, 260, fila, columna, dims.filas, dims.columnas, 26, 24);
-        }
+        if (planta === 0) return this.colocarEnRejilla(70, 150, 240, 260, fila, columna, dims.filas, dims.columnas, 26, 24);
+        if (planta === 1) return this.colocarEnRejilla(330, 150, 240, 260, fila, columna, dims.filas, dims.columnas, 26, 24);
+        if (planta === 2) return this.colocarEnRejilla(590, 150, 240, 260, fila, columna, dims.filas, dims.columnas, 26, 24);
 
         return this.colocarEnRejilla(220, 470, 460, 85, fila, columna, dims.filas, dims.columnas, 28, 18);
       }
+
       case 'TEATRO_CLASICO': {
         const dims = this.obtenerDimensionesPlanta(planta);
 
-        if (planta === 1) {
-          return this.colocarEnRejilla(55, 180, 75, 120, fila, columna, dims.filas, dims.columnas, 16, 16);
-        }
-
-        if (planta === 2) {
-          return this.colocarEnRejilla(770, 180, 75, 120, fila, columna, dims.filas, dims.columnas, 16, 16);
-        }
-
-        if (planta === 3) {
-          return this.colocarEnRejilla(120, 160, 660, 245, fila, columna, dims.filas, dims.columnas, 34, 26);
-        }
+        if (planta === 1) return this.colocarEnRejilla(55, 180, 75, 120, fila, columna, dims.filas, dims.columnas, 16, 16);
+        if (planta === 2) return this.colocarEnRejilla(770, 180, 75, 120, fila, columna, dims.filas, dims.columnas, 16, 16);
+        if (planta === 3) return this.colocarEnRejilla(120, 160, 660, 245, fila, columna, dims.filas, dims.columnas, 34, 26);
 
         return this.colocarEnRejilla(170, 455, 560, 72, fila, columna, dims.filas, dims.columnas, 28, 18);
       }
@@ -295,32 +357,10 @@ export class ElegirEntradas implements OnInit {
         const columnasPorLadoDerecho = Math.max(1, columnasTotales - columnasPorLadoIzquierdo);
 
         if (columna <= columnasPorLadoIzquierdo) {
-          return this.colocarEnRejilla(
-            195,
-            195,
-            190,
-            170,
-            fila,
-            columna,
-            dims.filas,
-            columnasPorLadoIzquierdo,
-            0,
-            0
-          );
+          return this.colocarEnRejilla(195, 195, 190, 170, fila, columna, dims.filas, columnasPorLadoIzquierdo, 0, 0);
         }
 
-        return this.colocarEnRejilla(
-          515,
-          195,
-          190,
-          170,
-          fila,
-          columna - columnasPorLadoIzquierdo,
-          dims.filas,
-          columnasPorLadoDerecho,
-          0,
-          0
-        );
+        return this.colocarEnRejilla(515, 195, 190, 170, fila, columna - columnasPorLadoIzquierdo, dims.filas, columnasPorLadoDerecho, 0, 0);
       }
 
       default:
@@ -329,7 +369,7 @@ export class ElegirEntradas implements OnInit {
   }
 
   toggleButaca(butaca: ButacaSvg): void {
-    if (!butaca.disponible) {
+    if (!butaca.disponible || (this.usaColaVirtual && !this.puedeComprar)) {
       return;
     }
 
@@ -345,17 +385,17 @@ export class ElegirEntradas implements OnInit {
   }
 
   seleccionarZona(zona: number): void {
+    if (this.usaColaVirtual && !this.puedeComprar) {
+      return;
+    }
+
     const zonaInfo = this.zonas.find(z => z.zona === zona);
 
     if (!zonaInfo || zonaInfo.disponibles <= 0) {
       return;
     }
 
-    if (this.zonaSeleccionada === zona) {
-      this.zonaSeleccionada = null;
-    } else {
-      this.zonaSeleccionada = zona;
-    }
+    this.zonaSeleccionada = this.zonaSeleccionada === zona ? null : zona;
   }
 
   disponiblesEnZona(zona: number): number {
@@ -383,12 +423,7 @@ export class ElegirEntradas implements OnInit {
     );
 
     if (entradasDePlanta.length === 0) {
-      return {
-        minFila: 1,
-        maxFila: 1,
-        minColumna: 1,
-        maxColumna: 1
-      };
+      return { minFila: 1, maxFila: 1, minColumna: 1, maxColumna: 1 };
     }
 
     let minFila = Number.POSITIVE_INFINITY;
@@ -406,12 +441,7 @@ export class ElegirEntradas implements OnInit {
       maxColumna = Math.max(maxColumna, columna);
     }
 
-    return {
-      minFila,
-      maxFila,
-      minColumna,
-      maxColumna
-    };
+    return { minFila, maxFila, minColumna, maxColumna };
   }
 
   private normalizarIndice(valor: number | undefined, minimo: number): number {
@@ -447,6 +477,11 @@ export class ElegirEntradas implements OnInit {
   }
 
   irAComprarEntradas(idEspectaculo: any): void {
+    if (this.usaColaVirtual && !this.puedeComprar) {
+      alert('Todavía no es tu turno para comprar.');
+      return;
+    }
+
     let idsEntradas: number[] = [];
 
     if (this.infoCompra?.modoSeleccion === 'ZONA') {
@@ -465,7 +500,6 @@ export class ElegirEntradas implements OnInit {
         return;
       }
 
-      // En modo zona enviamos una entrada real para evitar cantidad 0 en compra.
       idsEntradas = [entradasZona[0]];
     } else {
       idsEntradas = Array.from(this.idsButacasSeleccionadas);

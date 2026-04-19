@@ -1,7 +1,6 @@
 import { Injectable, inject } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
-import { EntradaMapaDto } from '../elegir-entradas/elegir-entradas';
-
+import { EntradaMapaDto, ColaEstadoDto } from '../elegir-entradas/elegir-entradas';
 @Injectable({
   providedIn: 'root'
 })
@@ -38,4 +37,16 @@ export class EspectaculosService {
     );
   }
 
+  entrarEnCola(idEspectaculo: number, userToken: string) {
+    return this.http.post<ColaEstadoDto>(
+      `http://localhost:8080/cola/entrar?idEspectaculo=${idEspectaculo}&userToken=${userToken}`,
+      {}
+    );
+  }
+
+  obtenerEstadoCola(idEspectaculo: number, userToken: string) {
+    return this.http.get<ColaEstadoDto>(
+      `http://localhost:8080/cola/estado?idEspectaculo=${idEspectaculo}&userToken=${userToken}`
+    );
+  }
 }

@@ -10,8 +10,8 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
-import edu.esi.ds.esientradas.dto.DtoEntradaMapa;
 import edu.esi.ds.esientradas.dto.DtoCompraInfo;
+import edu.esi.ds.esientradas.dto.DtoEntradaMapa;
 import edu.esi.ds.esientradas.services.ReservasService;
 import jakarta.servlet.http.HttpSession;
 
@@ -24,16 +24,18 @@ public class ReservasController {
     private ReservasService service;
 
     @PutMapping("/reservar")
-    public Long reservar(HttpSession session, @RequestParam Long idEntrada) {
-        Long precioEntrada = this.service.reservar(idEntrada, session.getId());
+    public Long reservar(HttpSession session,
+                         @RequestParam Long idEntrada,
+                         @RequestParam String userToken) {
+
+        Long precioEntrada = this.service.reservar(idEntrada, session.getId(), userToken);
         Long precioTotal = (Long) session.getAttribute("precioTotal");
 
         if (precioTotal == null) {
             precioTotal = precioEntrada;
             session.setAttribute("precioTotal", precioTotal);
-
         } else {
-            precioTotal += precioEntrada;
+            precioTotal = precioTotal + precioEntrada;
             session.setAttribute("precioTotal", precioTotal);
         }
 
