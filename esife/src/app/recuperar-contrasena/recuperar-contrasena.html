@@ -1,0 +1,32 @@
+<div class="cabecera">
+  <h1>Recuperar contrasena</h1>
+</div>
+
+<div class="reset-container">
+  <form (ngSubmit)="enviarSolicitud()">
+    <p class="hint">
+      Introduce tu correo y te enviaremos un enlace para cambiar la contrasena.
+    </p>
+
+    <div class="form-row">
+      <label for="email">Correo</label>
+      <input
+        id="email"
+        type="email"
+        [(ngModel)]="email"
+        name="email"
+        autocomplete="email"
+        required
+      >
+    </div>
+
+    <button class="submit-btn" type="submit" [disabled]="loading || !email">
+      {{ loading ? 'Enviando...' : 'Enviar enlace' }}
+    </button>
+
+    <p *ngIf="success" class="success">{{ success }}</p>
+    <p *ngIf="error" class="error">{{ error }}</p>
+
+    <a class="back-link" href="/login">Volver a iniciar sesion</a>
+  </form>
+</div>

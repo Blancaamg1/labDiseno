@@ -16,12 +16,18 @@ import jakarta.persistence.Table;
 @Table(name = "confirmation_tokens")
 public class Token {
 
+    public static final String PURPOSE_EMAIL_CONFIRMATION = "EMAIL_CONFIRMATION";
+    public static final String PURPOSE_PASSWORD_RESET = "PASSWORD_RESET";
+
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
     @Column(name = "token_value", nullable = false, unique = true, length = 120)
     private String value;
+
+    @Column(nullable = false, length = 40)
+    private String purpose;
 
     @Column(nullable = false)
     private LocalDateTime createdAt;
@@ -40,6 +46,15 @@ public class Token {
 
     public Token(String value, LocalDateTime createdAt, LocalDateTime expiresAt, User user) {
         this.value = value;
+        this.purpose = PURPOSE_EMAIL_CONFIRMATION;
+        this.createdAt = createdAt;
+        this.expiresAt = expiresAt;
+        this.user = user;
+    }
+
+    public Token(String value, String purpose, LocalDateTime createdAt, LocalDateTime expiresAt, User user) {
+        this.value = value;
+        this.purpose = purpose;
         this.createdAt = createdAt;
         this.expiresAt = expiresAt;
         this.user = user;
@@ -59,6 +74,14 @@ public class Token {
 
     public void setValue(String value) {
         this.value = value;
+    }
+
+    public String getPurpose() {
+        return purpose;
+    }
+
+    public void setPurpose(String purpose) {
+        this.purpose = purpose;
     }
 
     public LocalDateTime getCreatedAt() {

@@ -1,0 +1,60 @@
+<div class="cabecera">
+  <h1>Cambiar contrasena</h1>
+</div>
+
+<div class="reset-container">
+  <form (ngSubmit)="guardarNuevaContrasena()">
+    <p class="hint">Introduce tu nueva contrasena.</p>
+
+    <div class="form-row">
+      <label for="pwd1">Nueva</label>
+      <div class="password-wrapper">
+        <input
+          id="pwd1"
+          [type]="mostrarPwd1 ? 'text' : 'password'"
+          [(ngModel)]="pwd1"
+          name="pwd1"
+          autocomplete="new-password"
+          required
+        >
+        <button
+          type="button"
+          class="eye-btn"
+          (click)="togglePwd1()"
+        >
+          {{ mostrarPwd1 ? 'Ocultar' : 'Mostrar' }}
+        </button>
+      </div>
+    </div>
+
+    <div class="form-row">
+      <label for="pwd2">Confirmar</label>
+      <div class="password-wrapper">
+        <input
+          id="pwd2"
+          [type]="mostrarPwd2 ? 'text' : 'password'"
+          [(ngModel)]="pwd2"
+          name="pwd2"
+          autocomplete="new-password"
+          required
+        >
+        <button
+          type="button"
+          class="eye-btn"
+          (click)="togglePwd2()"
+        >
+          {{ mostrarPwd2 ? 'Ocultar' : 'Mostrar' }}
+        </button>
+      </div>
+    </div>
+
+    <button class="submit-btn" type="submit" [disabled]="loading || !pwd1 || !pwd2">
+      {{ loading ? 'Guardando...' : 'Guardar contrasena' }}
+    </button>
+
+    <p *ngIf="success" class="success">{{ success }}</p>
+    <p *ngIf="error" class="error">{{ error }}</p>
+
+    <a class="back-link" href="/recuperar-contrasena">Solicitar otro enlace</a>
+  </form>
+</div>

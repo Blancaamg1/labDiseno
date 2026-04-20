@@ -169,6 +169,33 @@ public class UserController {
         }
     }
 
+    @PostMapping("/password-reset/request")
+    public String requestPasswordReset(@RequestBody Map<String, String> request) {
+        String email = request.get("email");
+        return this.service.requestPasswordReset(email);
+    }
+
+    @PostMapping("/password-reset/confirm")
+    public String confirmPasswordReset(@RequestBody Map<String, String> request) {
+        String token = request.get("token");
+        String pwd1 = request.get("pwd1");
+        String pwd2 = request.get("pwd2");
+
+        if (token == null || token.isBlank() || pwd1 == null || pwd2 == null) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Datos de recuperacion invalidos");
+        }
+
+        if (!pwd1.equals(pwd2)) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Las contrasenias no coinciden");
+        }
+
+        if (!isStrongPassword(pwd1)) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "La contrasena no cumple los requisitos de seguridad");
+        }
+
+        return this.service.resetPassword(token, pwd1);
+    }
+
     private boolean isValidUsername(String username) {
         if (username.length() < 3 || username.length() > 20) {
             return false;

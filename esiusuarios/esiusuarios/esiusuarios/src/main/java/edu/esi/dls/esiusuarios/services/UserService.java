@@ -1,7 +1,7 @@
 package edu.esi.dls.esiusuarios.services;
 
 import java.time.LocalDateTime;
-import java.time.ZoneOffset;
+import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
@@ -37,7 +37,10 @@ public class UserService {
     private String forcedRecipientName;
 
     private static final long TOKEN_VALIDITY_HOURS = 24L;
-    private static final String CONFIRM_BASE_URL = "http://localhost:8081/users/confirm/";
+    private static final long RESET_TOKEN_VALIDITY_HOURS = 1L;
+
+    @Value("${frontend.reset-password-url:http://localhost:4200/restablecer-contrasena}")
+    private String resetPasswordUrl;
 
     @Autowired
     public UserService(UserDao repository, TokenDao tokenDao) {
@@ -97,38 +100,108 @@ public class UserService {
         String confirmationToken = UUID.randomUUID().toString();
         Token tokenEntity = new Token(
             confirmationToken,
+            Token.PURPOSE_EMAIL_CONFIRMATION,
             LocalDateTime.now(),
             LocalDateTime.now().plusHours(TOKEN_VALIDITY_HOURS),
             newUser
         );
         tokenDao.save(tokenEntity);
 
-        this.sendEmail(newUser, tokenEntity);
+        this.sendConfirmationEmail(newUser, tokenEntity);
 
         return "Le hemos enviado un correo de confirmación a " + forcedRecipientEmail;
     }
 
     @Transactional
     public String confirm(String tokenValue) {
-        Token token = tokenDao.findByValue(tokenValue)
+        Token token = tokenDao.findByValueAndPurpose(tokenValue, Token.PURPOSE_EMAIL_CONFIRMATION)
             .orElseThrow(() -> new IllegalArgumentException("Token de confirmación inválido"));
 
-        long tokenMillis = token.getCreatedAt().toInstant(ZoneOffset.UTC).toEpochMilli();
-        long time = System.currentTimeMillis();
-        if (time - tokenMillis > 24L * 60L * 60L * 1000L) {
+        LocalDateTime now = LocalDateTime.now();
+        if (token.isExpired(now)) {
             tokenDao.delete(token);
             throw new ResponseStatusException(HttpStatus.NOT_FOUND, "No se encuentra el token o ha caducado");
         }
 
         User user = token.getUser();
-        user.setValidationDate(time);
+        user.setValidationDate(System.currentTimeMillis());
         repository.save(user);
         tokenDao.delete(token);
 
         return "Cuenta confirmada correctamente";
     }
 
-    private void sendEmail(User user, Token token) {
+    @Transactional
+    public String requestPasswordReset(String email) {
+        if (email == null || email.isBlank()) {
+            return "Si el correo existe, se enviara un enlace para restablecer la contrasena.";
+        }
+
+        Optional<User> userOpt = repository.findByEmailIgnoreCase(email.trim().toLowerCase());
+        if (userOpt.isEmpty()) {
+            return "Si el correo existe, se enviara un enlace para restablecer la contrasena.";
+        }
+
+        User user = userOpt.get();
+
+        List<Token> existingTokens = tokenDao.findByUserAndPurposeAndUsedAtIsNull(user, Token.PURPOSE_PASSWORD_RESET);
+        LocalDateTime now = LocalDateTime.now();
+        for (Token existingToken : existingTokens) {
+            existingToken.setUsedAt(now);
+            tokenDao.save(existingToken);
+        }
+
+        Token tokenEntity = new Token(
+            UUID.randomUUID().toString(),
+            Token.PURPOSE_PASSWORD_RESET,
+            now,
+            now.plusHours(RESET_TOKEN_VALIDITY_HOURS),
+            user
+        );
+        tokenDao.save(tokenEntity);
+
+        this.sendResetPasswordEmail(user, tokenEntity);
+
+        return "Si el correo existe, se enviara un enlace para restablecer la contrasena.";
+    }
+
+    @Transactional
+    public String resetPassword(String tokenValue, String newPassword) {
+        if (tokenValue == null || tokenValue.isBlank()) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Token de recuperacion requerido");
+        }
+
+        if (!isStrongPassword(newPassword)) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "La contrasena no cumple los requisitos de seguridad");
+        }
+
+        Token token = tokenDao.findByValueAndPurpose(tokenValue.trim(), Token.PURPOSE_PASSWORD_RESET)
+            .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Token de recuperacion invalido"));
+
+        LocalDateTime now = LocalDateTime.now();
+        if (token.isUsed()) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "El enlace de recuperacion ya fue utilizado");
+        }
+
+        if (token.isExpired(now)) {
+            throw new ResponseStatusException(HttpStatus.GONE, "El enlace de recuperacion ha caducado");
+        }
+
+        User user = token.getUser();
+        user.setPassword(newPassword);
+        if (user.getValidationDate() == null) {
+            user.setValidationDate(System.currentTimeMillis());
+        }
+        user.setToken(generateSessionToken());
+        repository.save(user);
+
+        token.setUsedAt(now);
+        tokenDao.save(token);
+
+        return "Contrasena actualizada correctamente";
+    }
+
+    private void sendConfirmationEmail(User user, Token token) {
         try {
             String body = Manager.getInstance().readFile("welcome.html.txt");
             body = body.replace("#TOKEN#", token.getValue());
@@ -169,6 +242,73 @@ public class UserService {
         } catch (Exception e) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "No se pudo enviar email de confirmacion: " + e.getMessage());
         }
+    }
+
+    private void sendResetPasswordEmail(User user, Token token) {
+        try {
+            String body = Manager.getInstance().readFile("password-reset.html.txt");
+            String resetLink = this.resetPasswordUrl + "?token=" + token.getValue();
+            body = body.replace("#USER_NAME#", user.getName() == null ? "usuario" : user.getName());
+            body = body.replace("#RESET_LINK#", resetLink);
+
+            String paramsText = Manager.getInstance().readFile("brevo.parameters.txt");
+            JSONObject emailParameters = new JSONObject(paramsText);
+
+            String endPoint = emailParameters.getString("endpoint");
+            JSONArray headers = emailParameters.getJSONArray("headers");
+
+            String apiKey = System.getenv("BREVO_API_KEY");
+            if (apiKey != null && !apiKey.isBlank()) {
+                for (int i = 0; i < headers.length(); i++) {
+                    String header = headers.getString(i);
+                    if (header.trim().toLowerCase().startsWith("api-key")) {
+                        headers.put(i, "api-key: " + apiKey);
+                    }
+                }
+            }
+
+            JSONObject payload = new JSONObject();
+            payload.put("sender", emailParameters.getJSONObject("sender"));
+
+            JSONArray to = new JSONArray();
+            to.put(new JSONObject().put("email", forcedRecipientEmail).put("name", forcedRecipientName));
+            payload.put("to", to);
+            payload.put("subject", "Recuperacion de contrasena");
+            payload.put("htmlContent", body);
+
+            LOGGER.info("Enviando correo de recuperacion de contrasena a {} para usuario {}", forcedRecipientEmail, user.getEmail());
+
+            Manager.getInstance().getEmailService().sendEmail(
+                forcedRecipientEmail,
+                "endpoint", endPoint,
+                "headers", headers,
+                "payload", payload
+            );
+        } catch (Exception e) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "No se pudo enviar email de recuperacion: " + e.getMessage());
+        }
+    }
+
+    private boolean isStrongPassword(String password) {
+        if (password == null || password.length() < 8) {
+            return false;
+        }
+
+        boolean hasUpper = false;
+        boolean hasLower = false;
+        boolean hasDigit = false;
+
+        for (char c : password.toCharArray()) {
+            if (Character.isUpperCase(c)) {
+                hasUpper = true;
+            } else if (Character.isLowerCase(c)) {
+                hasLower = true;
+            } else if (Character.isDigit(c)) {
+                hasDigit = true;
+            }
+        }
+
+        return hasUpper && hasLower && hasDigit;
     }
 
     private String generateSessionToken() {
