@@ -22,6 +22,7 @@ import edu.esi.dls.esiusuarios.dao.UserDao;
 import edu.esi.dls.esiusuarios.dto.UserInfoDto;
 import edu.esi.dls.esiusuarios.model.Token;
 import edu.esi.dls.esiusuarios.model.User;
+import jakarta.servlet.http.HttpSession;
 
 @Service
 public class UserService {
@@ -29,6 +30,7 @@ public class UserService {
 
     private final UserDao repository;
     private final TokenDao tokenDao;
+    private final UserInputValidator userInputValidator;
 
     @Value("${brevo.force.to:entradaseventosesi@gmail.com}")
     private String forcedRecipientEmail;
@@ -43,9 +45,10 @@ public class UserService {
     private String resetPasswordUrl;
 
     @Autowired
-    public UserService(UserDao repository, TokenDao tokenDao) {
+    public UserService(UserDao repository, TokenDao tokenDao, UserInputValidator userInputValidator) {
         this.repository = repository;
         this.tokenDao = tokenDao;
+        this.userInputValidator = userInputValidator;
         if (repository.count() == 0) {
             repository.save(new User("Pepe", "pepe@example.com", "pepe123", generateSessionToken(), System.currentTimeMillis()));
             repository.save(new User("Ana", "ana@example.com", "ana123", generateSessionToken(), System.currentTimeMillis()));
@@ -53,6 +56,8 @@ public class UserService {
     }
 
     public String login(String name, String password) {
+        this.userInputValidator.validateLoginData(name, password);
+
         Optional<User> user = repository.findByNameIgnoreCase(name);
         if (user.isPresent()
                 && user.get().getPassword().equals(password)
@@ -84,8 +89,38 @@ public class UserService {
         }).orElse(null);
     }
 
+    public String getValidatedSessionUserName(HttpSession session) {
+        String userToken = this.getSessionToken(session);
+        String name = this.checkToken(userToken);
+        if (name == null) {
+            session.invalidate();
+            throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Invalid session");
+        }
+        return name;
+    }
+
+    public UserInfoDto getValidatedSessionUserInfo(HttpSession session) {
+        String userToken = this.getSessionToken(session);
+        UserInfoDto userInfo = this.getUserInfo(userToken);
+        if (userInfo == null) {
+            session.invalidate();
+            throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Invalid session");
+        }
+        return userInfo;
+    }
+
+    public String getSessionToken(HttpSession session) {
+        Object userId = session.getAttribute("userId");
+        if (userId == null) {
+            throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "No active session");
+        }
+        return userId.toString();
+    }
+
     @Transactional
-    public String register(String username, String email, String pwd1) {
+    public String register(String username, String email, String pwd1, String pwd2) {
+        this.userInputValidator.validateRegistrationData(username, email, pwd1, pwd2);
+
         if (repository.findByNameIgnoreCase(username).isPresent()) {
             return null;
         }
@@ -166,14 +201,12 @@ public class UserService {
     }
 
     @Transactional
-    public String resetPassword(String tokenValue, String newPassword) {
+    public String resetPassword(String tokenValue, String newPassword, String confirmPassword) {
         if (tokenValue == null || tokenValue.isBlank()) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Token de recuperacion requerido");
         }
 
-        if (!isStrongPassword(newPassword)) {
-            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "La contrasena no cumple los requisitos de seguridad");
-        }
+        this.userInputValidator.validatePasswordResetData(newPassword, confirmPassword);
 
         Token token = tokenDao.findByValueAndPurpose(tokenValue.trim(), Token.PURPOSE_PASSWORD_RESET)
             .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Token de recuperacion invalido"));
@@ -287,28 +320,6 @@ public class UserService {
         } catch (Exception e) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "No se pudo enviar email de recuperacion: " + e.getMessage());
         }
-    }
-
-    private boolean isStrongPassword(String password) {
-        if (password == null || password.length() < 8) {
-            return false;
-        }
-
-        boolean hasUpper = false;
-        boolean hasLower = false;
-        boolean hasDigit = false;
-
-        for (char c : password.toCharArray()) {
-            if (Character.isUpperCase(c)) {
-                hasUpper = true;
-            } else if (Character.isLowerCase(c)) {
-                hasLower = true;
-            } else if (Character.isDigit(c)) {
-                hasDigit = true;
-            }
-        }
-
-        return hasUpper && hasLower && hasDigit;
     }
 
     private String generateSessionToken() {
