@@ -49,4 +49,18 @@ export class EspectaculosService {
       `http://localhost:8080/cola/estado?idEspectaculo=${idEspectaculo}&userToken=${userToken}`
     );
   }
+
+  reservar(idEntrada: number, userToken: string) {
+    return this.http.put(
+      `http://localhost:8080/reservas/reservar?idEntrada=${idEntrada}&userToken=${userToken}`, 
+      {}
+    );
+  }
+
+  liberar(idEntrada: number, userToken: string) {
+    return this.http.put(
+      `http://localhost:8080/reservas/liberar?idEntrada=${idEntrada}&userToken=${userToken}`, 
+      {}
+    );
+  }
 }

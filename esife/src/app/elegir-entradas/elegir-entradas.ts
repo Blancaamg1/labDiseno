@@ -60,6 +60,10 @@ export class ElegirEntradas implements OnInit, OnDestroy {
   estadoCola: ColaEstadoDto | null = null;
   pollingCola: any = null;
 
+  tiempoRestante: number = 0;
+  intervalId: any = null;
+  idEntradaZonaReservada: number | null = null;
+
   private destroyRef = inject(DestroyRef);
 
   constructor(
@@ -78,6 +82,8 @@ export class ElegirEntradas implements OnInit, OnDestroy {
           this.cargarDatos(Number(idStr));
         }
       });
+    
+    this.verificarContadorExistente();
   }
 
   ngOnDestroy(): void {
@@ -85,6 +91,137 @@ export class ElegirEntradas implements OnInit, OnDestroy {
       clearInterval(this.pollingCola);
       this.pollingCola = null;
     }
+    if (this.intervalId) {
+      clearInterval(this.intervalId);
+      this.intervalId = null;
+    }
+  }
+
+  verificarContadorExistente() {
+    if (typeof localStorage === 'undefined') return;
+    const exp = localStorage.getItem('reservaExpiracion');
+    if (exp) {
+      const remaining = Math.floor((parseInt(exp, 10) - Date.now()) / 1000);
+      if (remaining > 0) {
+        this.tiempoRestante = remaining;
+
+        const guardadas = localStorage.getItem('entradasSeleccionadas');
+        if (guardadas) {
+           const ids = JSON.parse(guardadas);
+           ids.forEach((id: number) => this.idsButacasSeleccionadas.add(id));
+        }
+        const zonaGuardada = localStorage.getItem('zonaSeleccionada');
+        if (zonaGuardada) {
+           this.zonaSeleccionada = parseInt(zonaGuardada, 10);
+        }
+        const idZonaGuardada = localStorage.getItem('idEntradaZonaReservada');
+        if (idZonaGuardada) {
+           this.idEntradaZonaReservada = parseInt(idZonaGuardada, 10);
+        }
+
+        this.iniciarContadorLocal();
+      } else {
+        this.limpiarEstadoSeleccion();
+      }
+    }
+  }
+
+  guardarEstadoSeleccion() {
+    if (typeof localStorage === 'undefined') return;
+    localStorage.setItem('entradasSeleccionadas', JSON.stringify(Array.from(this.idsButacasSeleccionadas)));
+    if (this.zonaSeleccionada != null) {
+      localStorage.setItem('zonaSeleccionada', this.zonaSeleccionada.toString());
+    } else {
+      localStorage.removeItem('zonaSeleccionada');
+    }
+    if (this.idEntradaZonaReservada != null) {
+      localStorage.setItem('idEntradaZonaReservada', this.idEntradaZonaReservada.toString());
+    } else {
+      localStorage.removeItem('idEntradaZonaReservada');
+    }
+  }
+
+  limpiarEstadoSeleccion() {
+    if (typeof localStorage === 'undefined') return;
+    localStorage.removeItem('reservaExpiracion');
+    localStorage.removeItem('entradasSeleccionadas');
+    localStorage.removeItem('zonaSeleccionada');
+    localStorage.removeItem('idEntradaZonaReservada');
+  }
+
+  iniciarContadorLocal() {
+    if (typeof localStorage === 'undefined') return;
+    if (this.intervalId) return;
+    this.intervalId = setInterval(() => {
+      const exp = localStorage.getItem('reservaExpiracion');
+      if (exp) {
+        const remaining = Math.floor((parseInt(exp, 10) - Date.now()) / 1000);
+        if (remaining > 0) {
+          this.tiempoRestante = remaining;
+          this.cdr.detectChanges();
+        } else {
+          this.tiempoRestante = 0;
+          clearInterval(this.intervalId);
+          this.intervalId = null;
+          this.limpiarEstadoSeleccion();
+
+          const userToken = localStorage.getItem('authToken') || '';
+          
+          const peticionesLiberar = [];
+          this.idsButacasSeleccionadas.forEach(id => {
+             peticionesLiberar.push(this.reservasService.liberar(id, userToken));
+          });
+          if (this.idEntradaZonaReservada != null) {
+             peticionesLiberar.push(this.reservasService.liberar(this.idEntradaZonaReservada, userToken));
+          }
+
+          this.idsButacasSeleccionadas.clear();
+          this.zonaSeleccionada = null;
+          this.idEntradaZonaReservada = null;
+
+          if (peticionesLiberar.length > 0) {
+             forkJoin(peticionesLiberar).subscribe({
+               complete: () => {
+                 if (this.infoCompra?.idEspectaculo) {
+                    this.cargarDatos(this.infoCompra.idEspectaculo);
+                 }
+               },
+               error: () => {
+                 if (this.infoCompra?.idEspectaculo) {
+                    this.cargarDatos(this.infoCompra.idEspectaculo);
+                 }
+               }
+             });
+          } else {
+             if (this.infoCompra?.idEspectaculo) {
+                this.cargarDatos(this.infoCompra.idEspectaculo);
+             }
+          }
+
+          this.cdr.detectChanges();
+          alert('El tiempo de reserva ha expirado.');
+        }
+      } else {
+        this.tiempoRestante = 0;
+        clearInterval(this.intervalId);
+        this.intervalId = null;
+        this.cdr.detectChanges();
+      }
+    }, 1000);
+  }
+
+  registrarReservaLocal() {
+    if (typeof localStorage === 'undefined') return;
+    if (!localStorage.getItem('reservaExpiracion')) {
+      localStorage.setItem('reservaExpiracion', (Date.now() + 300000).toString());
+      this.verificarContadorExistente();
+    }
+  }
+
+  get tiempoFormateado(): string {
+    const minutos = Math.floor(this.tiempoRestante / 60);
+    const segundos = this.tiempoRestante % 60;
+    return `${minutos}:${segundos < 10 ? '0' : ''}${segundos}`;
   }
 
   private cargarDatos(idEspectaculo: number): void {
@@ -116,7 +253,7 @@ export class ElegirEntradas implements OnInit, OnDestroy {
   }
 
   entrarEnCola(idEspectaculo: number): void {
-    const userToken = localStorage.getItem('authToken');
+    const userToken = typeof localStorage !== 'undefined' ? localStorage.getItem('authToken') : null;
 
     if (!userToken) {
       alert('No se ha encontrado el token del usuario.');
@@ -369,14 +506,32 @@ export class ElegirEntradas implements OnInit, OnDestroy {
   }
 
   toggleButaca(butaca: ButacaSvg): void {
-    if (!butaca.disponible || (this.usaColaVirtual && !this.puedeComprar)) {
+    if ((!butaca.disponible && !this.idsButacasSeleccionadas.has(butaca.idEntrada)) || (this.usaColaVirtual && !this.puedeComprar)) {
       return;
     }
 
+    const userToken = typeof localStorage !== 'undefined' ? localStorage.getItem('authToken') || '' : '';
+
     if (this.idsButacasSeleccionadas.has(butaca.idEntrada)) {
-      this.idsButacasSeleccionadas.delete(butaca.idEntrada);
+      this.reservasService.liberar(butaca.idEntrada, userToken).subscribe(() => {
+        this.idsButacasSeleccionadas.delete(butaca.idEntrada);
+        if (this.idsButacasSeleccionadas.size === 0) {
+           this.limpiarEstadoSeleccion();
+        } else {
+           this.guardarEstadoSeleccion();
+        }
+        this.cdr.detectChanges();
+      });
     } else {
-      this.idsButacasSeleccionadas.add(butaca.idEntrada);
+      this.reservasService.reservar(butaca.idEntrada, userToken).subscribe(() => {
+        this.idsButacasSeleccionadas.add(butaca.idEntrada);
+        this.registrarReservaLocal();
+        this.guardarEstadoSeleccion();
+        this.cdr.detectChanges();
+      }, err => {
+        alert('Esta entrada ya no está disponible.');
+        this.cargarDatos(this.infoCompra?.idEspectaculo);
+      });
     }
   }
 
@@ -389,13 +544,44 @@ export class ElegirEntradas implements OnInit, OnDestroy {
       return;
     }
 
-    const zonaInfo = this.zonas.find(z => z.zona === zona);
+    const userToken = typeof localStorage !== 'undefined' ? localStorage.getItem('authToken') || '' : '';
 
-    if (!zonaInfo || zonaInfo.disponibles <= 0) {
-      return;
+    if (this.zonaSeleccionada === zona) {
+      if (this.idEntradaZonaReservada != null) {
+         this.reservasService.liberar(this.idEntradaZonaReservada, userToken).subscribe(() => {
+            this.zonaSeleccionada = null;
+            this.idEntradaZonaReservada = null;
+            this.limpiarEstadoSeleccion();
+            this.cdr.detectChanges();
+         });
+      }
+    } else {
+      const zonaInfo = this.zonas.find(z => z.zona === zona);
+      if (!zonaInfo || zonaInfo.disponibles <= 0) {
+        return;
+      }
+      
+      const entradasZona = this.entradasMapa.filter(e => e.zona === zona && e.disponible).map(e => e.idEntrada);
+      if (entradasZona.length === 0) {
+         alert('No hay entradas disponibles en la zona seleccionada.');
+         return;
+      }
+      const idEntrada = entradasZona[0];
+      
+      this.reservasService.reservar(idEntrada, userToken).subscribe(() => {
+         if (this.idEntradaZonaReservada != null) {
+            this.reservasService.liberar(this.idEntradaZonaReservada, userToken).subscribe();
+         }
+         this.zonaSeleccionada = zona;
+         this.idEntradaZonaReservada = idEntrada;
+         this.registrarReservaLocal();
+         this.guardarEstadoSeleccion();
+         this.cdr.detectChanges();
+      }, err => {
+         alert('Error al reservar la entrada en esta zona.');
+         this.cargarDatos(this.infoCompra?.idEspectaculo);
+      });
     }
-
-    this.zonaSeleccionada = this.zonaSeleccionada === zona ? null : zona;
   }
 
   disponiblesEnZona(zona: number): number {
@@ -485,22 +671,12 @@ export class ElegirEntradas implements OnInit, OnDestroy {
     let idsEntradas: number[] = [];
 
     if (this.infoCompra?.modoSeleccion === 'ZONA') {
-      if (this.zonaSeleccionada == null) {
+      if (this.zonaSeleccionada == null || this.idEntradaZonaReservada == null) {
         alert('Selecciona una zona antes de continuar.');
         return;
       }
 
-      const entradasZona = this.entradasMapa
-        .filter(e => e.zona === this.zonaSeleccionada && e.disponible)
-        .map(e => e.idEntrada)
-        .filter(id => id != null);
-
-      if (entradasZona.length === 0) {
-        alert('No hay entradas disponibles en la zona seleccionada.');
-        return;
-      }
-
-      idsEntradas = [entradasZona[0]];
+      idsEntradas = [this.idEntradaZonaReservada];
     } else {
       idsEntradas = Array.from(this.idsButacasSeleccionadas);
 

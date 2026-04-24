@@ -42,6 +42,11 @@ public class ReservasController {
         return precioTotal;
     }
 
+    @PutMapping("/liberar")
+    public void liberar(@RequestParam Long idEntrada, @RequestParam String userToken) {
+        this.service.liberar(idEntrada, userToken);
+    }
+
     @GetMapping("/infoCompra")
     public DtoCompraInfo obtenerInfoCompra(@RequestParam Long idEspectaculo) {
         return this.service.obtenerInfoCompra(idEspectaculo);

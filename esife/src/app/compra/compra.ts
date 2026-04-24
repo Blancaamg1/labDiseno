@@ -44,6 +44,9 @@ export class CompraComponent implements OnInit, AfterViewInit, OnDestroy {
   showPaymentForm = false;
   idEspectaculo?: number;
 
+  tiempoRestante: number = 300; // 5 minutos en segundos
+  intervalId: any;
+
   idsEntradasSeleccionadas: number[] = [];
   constructor(
     private service: Pagos,
@@ -63,13 +66,68 @@ export class CompraComponent implements OnInit, AfterViewInit, OnDestroy {
       this.setIdsEntradas(search.get('idsEntradas'));
       this.actualizarImporte();
     }
+
+    if (this.isBrowser) {
+      this.verificarContadorExistente();
+    }
   }
   ngAfterViewInit(): void {
     this.mountCardElement();
   }
 
   ngOnDestroy(): void {
+    if (this.intervalId) {
+      clearInterval(this.intervalId);
+    }
     this.destroyCardElement();
+  }
+
+  private verificarContadorExistente(): void {
+    const exp = localStorage.getItem('reservaExpiracion');
+    if (exp) {
+      const remaining = Math.floor((parseInt(exp, 10) - Date.now()) / 1000);
+      if (remaining > 0) {
+        this.tiempoRestante = remaining;
+        this.iniciarContador();
+      } else {
+        this.tiempoRestante = 0;
+        this.cardError = 'El tiempo de reserva ha expirado. Las entradas han sido liberadas.';
+        this.isProcessing = true;
+      }
+    } else {
+      this.tiempoRestante = 0;
+    }
+  }
+
+  private iniciarContador(): void {
+    if (this.intervalId) return;
+    this.intervalId = setInterval(() => {
+      const exp = localStorage.getItem('reservaExpiracion');
+      if (exp) {
+        const remaining = Math.floor((parseInt(exp, 10) - Date.now()) / 1000);
+        if (remaining > 0) {
+          this.tiempoRestante = remaining;
+          this.cdr.detectChanges();
+        } else {
+          this.tiempoRestante = 0;
+          clearInterval(this.intervalId);
+          this.intervalId = null;
+          this.cardError = 'El tiempo de reserva ha expirado. Las entradas han sido liberadas.';
+          this.isProcessing = true; // Para deshabilitar el botón
+          this.cdr.detectChanges();
+        }
+      } else {
+        this.tiempoRestante = 0;
+        clearInterval(this.intervalId);
+        this.intervalId = null;
+      }
+    }, 1000);
+  }
+
+  get tiempoFormateado(): string {
+    const minutos = Math.floor(this.tiempoRestante / 60);
+    const segundos = this.tiempoRestante % 60;
+    return `${minutos}:${segundos < 10 ? '0' : ''}${segundos}`;
   }
 
   private actualizarImporte(): void {
@@ -141,6 +199,7 @@ export class CompraComponent implements OnInit, AfterViewInit, OnDestroy {
         next: (serviceResponse: any) => {
           console.log('Respuesta confirmarPago:', serviceResponse);
           alert(serviceResponse?.mensaje || 'Pago confirmado');
+          localStorage.removeItem('reservaExpiracion');
 
           if (serviceResponse?.pagoId) {
             window.open(`http://localhost:8080/pagos/${serviceResponse.pagoId}/pdf`, '_blank');

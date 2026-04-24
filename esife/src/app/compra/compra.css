@@ -114,3 +114,33 @@
 .btnPago {
   margin-top: 8px;
 }
+
+.contador-reserva {
+  font-size: 18px;
+  background-color: #e2f4e2;
+  color: #2d5a3d;
+  padding: 10px 20px;
+  border-radius: 8px;
+  margin-bottom: 20px;
+  text-align: center;
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.contador-reserva.alerta {
+  background-color: #f8d7da;
+  color: #842029;
+}
+
+.contador-expirado {
+  font-size: 18px;
+  background-color: #f8d7da;
+  color: #842029;
+  padding: 10px 20px;
+  border-radius: 8px;
+  margin-bottom: 20px;
+  text-align: center;
+  width: 100%;
+  box-sizing: border-box;
+  font-weight: bold;
+}

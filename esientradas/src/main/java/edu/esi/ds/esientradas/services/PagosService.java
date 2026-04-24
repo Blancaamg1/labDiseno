@@ -52,9 +52,9 @@ public class PagosService {
         Stripe.apiKey = this.getStripeSecretKey();
 
         PaymentIntentCreateParams params = new PaymentIntentCreateParams.Builder()
-            .setCurrency("eur")
-            .setAmount(centimos)
-            .build();
+                .setCurrency("eur")
+                .setAmount(centimos)
+                .build();
 
         PaymentIntent intent = PaymentIntent.create(params);
         JSONObject json = new JSONObject(intent.toJson());
@@ -68,9 +68,8 @@ public class PagosService {
     public DtoConfirmarPagoResponse confirmarPago(DtoConfirmarPagoRequest request) {
         if (request == null || request.getPaymentIntentId() == null || request.getPaymentIntentId().isBlank()) {
             throw new ResponseStatusException(
-                HttpStatus.BAD_REQUEST,
-                "Se requiere paymentIntentId para confirmar el pago"
-            );
+                    HttpStatus.BAD_REQUEST,
+                    "Se requiere paymentIntentId para confirmar el pago");
         }
 
         this.validarEntradasRecibidas(request);
@@ -82,15 +81,14 @@ public class PagosService {
             String stripeStatus = intent.getStatus();
             if (!"succeeded".equalsIgnoreCase(stripeStatus)) {
                 throw new ResponseStatusException(
-                    HttpStatus.CONFLICT,
-                    "El pago no esta completado en Stripe. Estado actual: " + stripeStatus
-                );
+                        HttpStatus.CONFLICT,
+                        "El pago no esta completado en Stripe. Estado actual: " + stripeStatus);
             }
 
             Optional<Pago> existingPago = this.pagoDao.findByStripePaymentIntentId(intent.getId());
             Pago pago = existingPago.orElseGet(Pago::new);
             boolean yaConfirmado = existingPago.isPresent()
-                && "PAGADO".equalsIgnoreCase(existingPago.get().getEstado());
+                    && "PAGADO".equalsIgnoreCase(existingPago.get().getEstado());
 
             if (!yaConfirmado) {
                 pago.setStripePaymentIntentId(intent.getId());
@@ -121,17 +119,15 @@ public class PagosService {
 
                 if (request.getUserToken() == null || request.getUserToken().isBlank()) {
                     throw new ResponseStatusException(
-                        HttpStatus.UNAUTHORIZED,
-                        "Se requiere token de usuario para confirmar el pago"
-                    );
+                            HttpStatus.UNAUTHORIZED,
+                            "Se requiere token de usuario para confirmar el pago");
                 }
 
                 DtoUsuarioInfo authenticatedUser = this.usuarioService.getUserInfo(request.getUserToken());
                 if (authenticatedUser == null || authenticatedUser.getId() == null) {
                     throw new ResponseStatusException(
-                        HttpStatus.UNAUTHORIZED,
-                        "No se pudo identificar el comprador. Token invalido."
-                    );
+                            HttpStatus.UNAUTHORIZED,
+                            "No se pudo identificar el comprador. Token invalido.");
                 }
 
                 pago.setIdUsuario(authenticatedUser.getId());
@@ -167,8 +163,8 @@ public class PagosService {
             response.setYaConfirmado(yaConfirmado);
             response.setPdfGenerado(pdfGenerado);
             response.setMensaje(yaConfirmado
-                ? "Pago ya confirmado previamente"
-                : "Pago confirmado correctamente");
+                    ? "Pago ya confirmado previamente"
+                    : "Pago confirmado correctamente");
 
             return response;
 
@@ -176,27 +172,24 @@ public class PagosService {
             throw ex;
         } catch (StripeException ex) {
             throw new ResponseStatusException(
-                HttpStatus.BAD_GATEWAY,
-                "No se pudo validar el pago en Stripe",
-                ex
-            );
+                    HttpStatus.BAD_GATEWAY,
+                    "No se pudo validar el pago en Stripe",
+                    ex);
         }
     }
 
     private void validarEntradasRecibidas(DtoConfirmarPagoRequest request) {
         if (request.getIdsEntradas() == null || request.getIdsEntradas().isEmpty()) {
             throw new ResponseStatusException(
-                HttpStatus.BAD_REQUEST,
-                "No se han recibido entradas para confirmar el pago"
-            );
+                    HttpStatus.BAD_REQUEST,
+                    "No se han recibido entradas para confirmar el pago");
         }
 
         if (request.getCantidadEntradas() != null
                 && request.getCantidadEntradas().intValue() != request.getIdsEntradas().size()) {
             throw new ResponseStatusException(
-                HttpStatus.BAD_REQUEST,
-                "La cantidad de entradas no coincide con la seleccion"
-            );
+                    HttpStatus.BAD_REQUEST,
+                    "La cantidad de entradas no coincide con la seleccion");
         }
     }
 
@@ -205,17 +198,15 @@ public class PagosService {
 
         if (entradas.size() != idsEntradas.size()) {
             throw new ResponseStatusException(
-                HttpStatus.NOT_FOUND,
-                "Alguna de las entradas seleccionadas no existe"
-            );
+                    HttpStatus.NOT_FOUND,
+                    "Alguna de las entradas seleccionadas no existe");
         }
 
         for (Entrada entrada : entradas) {
-            if (entrada.getEstado() != Estado.DISPONIBLE) {
+            if (entrada.getEstado() == Estado.VENDIDA) {
                 throw new ResponseStatusException(
-                    HttpStatus.CONFLICT,
-                    "Alguna de las entradas seleccionadas ya no esta disponible"
-                );
+                        HttpStatus.CONFLICT,
+                        "Alguna de las entradas seleccionadas ya no esta disponible");
             }
 
             if (idEspectaculo != null
@@ -223,14 +214,14 @@ public class PagosService {
                     && entrada.getEspectaculo().getId() != null
                     && !entrada.getEspectaculo().getId().equals(idEspectaculo)) {
                 throw new ResponseStatusException(
-                    HttpStatus.CONFLICT,
-                    "Alguna entrada no pertenece al espectaculo indicado"
-                );
+                        HttpStatus.CONFLICT,
+                        "Alguna entrada no pertenece al espectaculo indicado");
             }
         }
 
         for (Entrada entrada : entradas) {
             entrada.setEstado(Estado.VENDIDA);
+            entrada.setToken(null);
         }
 
         this.entradaDao.saveAll(entradas);

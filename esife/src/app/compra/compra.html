@@ -5,6 +5,13 @@
 
   <div class="contenedor-pago">
     <div class="pagos">
+      <div class="contador-reserva" *ngIf="tiempoRestante > 0" [ngClass]="{'alerta': tiempoRestante <= 60}">
+        Tiempo restante para pagar: <strong>{{ tiempoFormateado }}</strong>
+      </div>
+      <div class="contador-expirado" *ngIf="tiempoRestante === 0">
+        El tiempo de reserva ha expirado. Vuelve a iniciar el proceso de compra.
+      </div>
+
       <div class="resumen-pago">
         <p>Precio por entrada: <strong>{{ precioUnitario }} €</strong></p>
         <p>Cantidad de entradas: <strong>{{ cantidadEntradas }}</strong></p>

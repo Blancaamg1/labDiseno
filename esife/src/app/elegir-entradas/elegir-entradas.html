@@ -189,7 +189,7 @@
           <g *ngFor="let butaca of butacas">
             <circle
               class="seat"
-              [class.ocupada]="!butaca.disponible"
+              [class.ocupada]="!butaca.disponible && !estaSeleccionada(butaca.idEntrada)"
               [class.seleccionada]="estaSeleccionada(butaca.idEntrada)"
               [attr.cx]="butaca.x"
               [attr.cy]="butaca.y"
@@ -214,28 +214,28 @@
 
               <path class="zona"
                     [class.seleccionada-zona]="zonaSeleccionada === 1"
-                    [class.ocupada-zona]="disponiblesEnZona(1) <= 0"
+                    [class.ocupada-zona]="disponiblesEnZona(1) <= 0 && zonaSeleccionada !== 1"
                     d="M250 90 Q500 20 750 90 L700 150 Q500 95 300 150 Z"
                     (click)="seleccionarZona(1)">
               </path>
 
               <path class="zona"
                     [class.seleccionada-zona]="zonaSeleccionada === 2"
-                    [class.ocupada-zona]="disponiblesEnZona(2) <= 0"
+                    [class.ocupada-zona]="disponiblesEnZona(2) <= 0 && zonaSeleccionada !== 2"
                     d="M300 500 Q500 555 700 500 L750 560 Q500 630 250 560 Z"
                     (click)="seleccionarZona(2)">
               </path>
 
               <path class="zona"
                     [class.seleccionada-zona]="zonaSeleccionada === 3"
-                    [class.ocupada-zona]="disponiblesEnZona(3) <= 0"
+                    [class.ocupada-zona]="disponiblesEnZona(3) <= 0 && zonaSeleccionada !== 3"
                     d="M100 180 Q55 325 100 470 L180 430 Q145 325 180 220 Z"
                     (click)="seleccionarZona(3)">
               </path>
 
               <path class="zona"
                     [class.seleccionada-zona]="zonaSeleccionada === 4"
-                    [class.ocupada-zona]="disponiblesEnZona(4) <= 0"
+                    [class.ocupada-zona]="disponiblesEnZona(4) <= 0 && zonaSeleccionada !== 4"
                     d="M900 180 Q945 325 900 470 L820 430 Q855 325 820 220 Z"
                     (click)="seleccionarZona(4)">
               </path>
@@ -268,35 +268,35 @@
 
               <rect class="zona"
                     [class.seleccionada-zona]="zonaSeleccionada === 1"
-                    [class.ocupada-zona]="disponiblesEnZona(1) <= 0"
+                    [class.ocupada-zona]="disponiblesEnZona(1) <= 0 && zonaSeleccionada !== 1"
                     x="250" y="150" width="500" height="90" rx="16"
                     (click)="seleccionarZona(1)">
               </rect>
 
               <rect class="zona"
                     [class.seleccionada-zona]="zonaSeleccionada === 2"
-                    [class.ocupada-zona]="disponiblesEnZona(2) <= 0"
+                    [class.ocupada-zona]="disponiblesEnZona(2) <= 0 && zonaSeleccionada !== 2"
                     x="220" y="260" width="560" height="110" rx="16"
                     (click)="seleccionarZona(2)">
               </rect>
 
               <rect class="zona"
                     [class.seleccionada-zona]="zonaSeleccionada === 3"
-                    [class.ocupada-zona]="disponiblesEnZona(3) <= 0"
+                    [class.ocupada-zona]="disponiblesEnZona(3) <= 0 && zonaSeleccionada !== 3"
                     x="150" y="260" width="55" height="170" rx="12"
                     (click)="seleccionarZona(3)">
               </rect>
 
               <rect class="zona"
                     [class.seleccionada-zona]="zonaSeleccionada === 4"
-                    [class.ocupada-zona]="disponiblesEnZona(4) <= 0"
+                    [class.ocupada-zona]="disponiblesEnZona(4) <= 0 && zonaSeleccionada !== 4"
                     x="795" y="260" width="55" height="170" rx="12"
                     (click)="seleccionarZona(4)">
               </rect>
 
               <rect class="zona"
                     [class.seleccionada-zona]="zonaSeleccionada === 5"
-                    [class.ocupada-zona]="disponiblesEnZona(5) <= 0"
+                    [class.ocupada-zona]="disponiblesEnZona(5) <= 0 && zonaSeleccionada !== 5"
                     x="250" y="390" width="500" height="80" rx="16"
                     (click)="seleccionarZona(5)">
               </rect>
@@ -342,6 +342,11 @@
       <div class="panel-titulo lateral">
         <h2>Tu selección</h2>
         <p>Resumen de entradas elegidas</p>
+      </div>
+
+      <div class="reserva-bloque" *ngIf="tiempoRestante > 0" style="background-color: #e2f4e2; border-radius: 8px; padding: 10px;">
+        <span class="reserva-etiqueta" style="color: #2d5a3d;">Tiempo restante</span>
+        <p class="reserva-valor" [style.color]="tiempoRestante <= 60 ? '#842029' : '#2d5a3d'">{{ tiempoFormateado }}</p>
       </div>
 
       <div class="reserva-bloque" *ngIf="infoCompra.modoSeleccion === 'PRECISA'">

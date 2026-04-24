@@ -10,6 +10,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.web.server.ResponseStatusException;
+import org.springframework.scheduling.annotation.Scheduled;
 
 import edu.esi.ds.esientradas.dao.ColaVirtualDao;
 import edu.esi.ds.esientradas.dao.EntradaDao;
@@ -64,6 +65,19 @@ public class ReservasService {
 
         this.entradaDao.updateEstado(idEntrada, Estado.RESERVADA);
         return entrada.getPrecio();
+    }
+
+    @Transactional
+    public void liberar(Long idEntrada, String userToken) {
+        Entrada entrada = this.entradaDao.findById(idEntrada).orElse(null);
+        if (entrada != null && entrada.getEstado() == Estado.RESERVADA) {
+            entrada.setEstado(Estado.DISPONIBLE);
+            Token token = entrada.getToken();
+            if (token != null) {
+                entrada.setToken(null);
+                this.tokenDao.delete(token);
+            }
+        }
     }
 
     private void validarAccesoPorCola(Entrada entrada, String userToken) {
@@ -215,5 +229,23 @@ public class ReservasService {
         }
 
         return resultado;
+    }
+
+    @Scheduled(fixedDelay = 10000)
+    @Transactional
+    public void liberarEntradasExpiradas() {
+        Long tiempoExpiracion = System.currentTimeMillis() - 300000;
+        List<Token> tokensExpirados = this.tokenDao.findByHoraLessThan(tiempoExpiracion);
+        
+        for (Token token : tokensExpirados) {
+            Entrada entrada = token.getEntrada();
+            if (entrada != null) {
+                if (entrada.getEstado() == Estado.RESERVADA) {
+                    entrada.setEstado(Estado.DISPONIBLE);
+                }
+                entrada.setToken(null);
+            }
+            this.tokenDao.delete(token);
+        }
     }
 }
