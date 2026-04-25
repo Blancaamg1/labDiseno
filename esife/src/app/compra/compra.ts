@@ -1,6 +1,7 @@
 import { CommonModule, isPlatformBrowser } from '@angular/common';
 import { AfterViewInit, ChangeDetectorRef, Component, ElementRef, OnDestroy, OnInit, PLATFORM_ID, ViewChild, inject } from '@angular/core';
 import { Pagos } from '../pagos';
+import { EspectaculosService } from '../espectaculos/espectaculos.service';
 import { FormsModule } from '@angular/forms';
 import { ActivatedRoute } from '@angular/router';
 
@@ -27,7 +28,7 @@ export class CompraComponent implements OnInit, AfterViewInit, OnDestroy {
   private readonly platformId = inject(PLATFORM_ID);
   private readonly isBrowser = isPlatformBrowser(this.platformId);
   private readonly route = inject(ActivatedRoute, { optional: true });
-  private readonly publishableKey = 'pk_test_51T92jkQdO08Nbk2EpzE4U8yNig7EO2Q6etoAl3aWG2NcKeKX0WQL3X7hmjceOzXyfwUz07Enui94aHT2h159EdA3002ovxoko0';
+  private readonly publishableKey = 'pk_test_51T92klDfoOsvKeXTdBJDJbXzaRbwz4oNNQF7pNsQbFjV0KLwxVwQvlCHIzXpcY4DEvYozxrSGxup0YGuaQyLYjWl00EHouwGZN';
 
   private stripe: any;
   private elements: any;
@@ -50,6 +51,7 @@ export class CompraComponent implements OnInit, AfterViewInit, OnDestroy {
   idsEntradasSeleccionadas: number[] = [];
   constructor(
     private service: Pagos,
+    private reservasService: EspectaculosService,
     private cdr: ChangeDetectorRef,
   ) { }
 
@@ -91,11 +93,13 @@ export class CompraComponent implements OnInit, AfterViewInit, OnDestroy {
         this.iniciarContador();
       } else {
         this.tiempoRestante = 0;
+        this.clearPersistedReservationState();
         this.cardError = 'El tiempo de reserva ha expirado. Las entradas han sido liberadas.';
         this.isProcessing = true;
       }
     } else {
       this.tiempoRestante = 0;
+      this.clearPersistedSelectionOnly();
     }
   }
 
@@ -112,6 +116,7 @@ export class CompraComponent implements OnInit, AfterViewInit, OnDestroy {
           this.tiempoRestante = 0;
           clearInterval(this.intervalId);
           this.intervalId = null;
+          this.clearPersistedReservationState();
           this.cardError = 'El tiempo de reserva ha expirado. Las entradas han sido liberadas.';
           this.isProcessing = true; // Para deshabilitar el botón
           this.cdr.detectChanges();
@@ -199,7 +204,7 @@ export class CompraComponent implements OnInit, AfterViewInit, OnDestroy {
         next: (serviceResponse: any) => {
           console.log('Respuesta confirmarPago:', serviceResponse);
           alert(serviceResponse?.mensaje || 'Pago confirmado');
-          localStorage.removeItem('reservaExpiracion');
+          this.clearPersistedReservationState();
 
           if (serviceResponse?.pagoId) {
             window.open(`http://localhost:8080/pagos/${serviceResponse.pagoId}/pdf`, '_blank');
@@ -207,6 +212,10 @@ export class CompraComponent implements OnInit, AfterViewInit, OnDestroy {
         },
         error: (serviceError: any) => {
           console.log('Error confirmarPago:', serviceError);
+          if (serviceError?.status === 409) {
+            this.liberarReservasActuales();
+            this.clearPersistedReservationState();
+          }
           const msg = serviceError?.error?.message || serviceError?.message || 'Error al confirmar el pago';
           alert(msg);
         },
@@ -324,5 +333,31 @@ export class CompraComponent implements OnInit, AfterViewInit, OnDestroy {
       .split(',')
       .map(id => Number(id))
       .filter(id => !Number.isNaN(id) && id > 0);
+  }
+
+  private liberarReservasActuales(): void {
+    const userToken = localStorage.getItem('authToken') ?? '';
+    if (!userToken) {
+      return;
+    }
+
+    this.idsEntradasSeleccionadas.forEach((idEntrada) => {
+      this.reservasService.liberar(idEntrada, userToken).subscribe({
+        error: () => {
+          // Ignoramos errores para no bloquear el flujo de recuperación.
+        }
+      });
+    });
+  }
+
+  private clearPersistedSelectionOnly(): void {
+    localStorage.removeItem('entradasSeleccionadas');
+    localStorage.removeItem('zonaSeleccionada');
+    localStorage.removeItem('idEntradaZonaReservada');
+  }
+
+  private clearPersistedReservationState(): void {
+    localStorage.removeItem('reservaExpiracion');
+    this.clearPersistedSelectionOnly();
   }
 }

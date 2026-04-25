@@ -6,7 +6,8 @@ import { ActivatedRoute, Router } from '@angular/router';
 import { firstValueFrom, timeout } from 'rxjs';
 
 type LoginResponse = {
-  userId: string;
+  authToken?: string;
+  userId?: string;
   name: string;
   httpSessionId: string;
 };
@@ -59,8 +60,9 @@ export class Login {
       if (displayName) {
         localStorage.setItem('loggedUserName', displayName);
       }
-      if (response?.userId) {
-        localStorage.setItem('authToken', response.userId);
+      const authToken = response?.authToken ?? response?.userId;
+      if (authToken) {
+        localStorage.setItem('authToken', authToken);
       }
 
       const returnUrl = this.route.snapshot.queryParamMap.get('returnUrl') || '/me';

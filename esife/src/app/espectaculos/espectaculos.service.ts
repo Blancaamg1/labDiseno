@@ -1,6 +1,6 @@
 import { Injectable, inject } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
-import { EntradaMapaDto, ColaEstadoDto } from '../elegir-entradas/elegir-entradas';
+import { EntradaMapaDto, ColaEstadoDto } from '../elegir-entradas/elegir-entradas.model';
 @Injectable({
   providedIn: 'root'
 })
