@@ -4,6 +4,7 @@ import { FormsModule } from '@angular/forms';
 import { EspectaculosService } from './espectaculos.service';
 import { Router,RouterModule } from '@angular/router';
 import { retry } from 'rxjs';
+import { AuthService } from '../auth.service';
 
 @Component({
   selector: 'app-espectaculos',
@@ -23,7 +24,11 @@ export class Espectaculos implements OnInit {
   private readonly meses = ['ene', 'feb', 'mar', 'abr', 'may', 'jun', 'jul', 'ago', 'sep', 'oct', 'nov', 'dic'];
   private readonly dias = ['dom', 'lun', 'mar', 'mie', 'jue', 'vie', 'sab'];
 
-  constructor(private espectaculosService: EspectaculosService, private router: Router) {
+  constructor(
+    private espectaculosService: EspectaculosService,
+    private router: Router,
+    private authService: AuthService
+  ) {
     this.loadUserFromStorage();
   }
 
@@ -178,13 +183,9 @@ export class Espectaculos implements OnInit {
 }
 
   cerrarSesion() {
-    if (typeof localStorage !== 'undefined') {
-      localStorage.removeItem('loggedUserName');
-      localStorage.removeItem('authToken');
-    }
+    this.authService.logout();
     this.loggedUser = null;
     this.userAvatarUrl = null;
-    this.router.navigate(['/login']);
   }
 
   onFiltroChange(): void {
