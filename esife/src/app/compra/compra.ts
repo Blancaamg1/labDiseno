@@ -1,9 +1,9 @@
 import { CommonModule, isPlatformBrowser } from '@angular/common';
-import { AfterViewInit, ChangeDetectorRef, Component, ElementRef, OnDestroy, OnInit, PLATFORM_ID, ViewChild, inject } from '@angular/core';
+import { AfterViewInit, ChangeDetectorRef, Component, ElementRef, OnDestroy, OnInit, PLATFORM_ID, ViewChild, inject, NgZone } from '@angular/core';
 import { Pagos } from '../pagos';
 import { EspectaculosService } from '../espectaculos/espectaculos.service';
 import { FormsModule } from '@angular/forms';
-import { ActivatedRoute } from '@angular/router';
+import { ActivatedRoute, Router } from '@angular/router';
 
 declare global {
   interface Window {
@@ -26,9 +26,11 @@ export class CompraComponent implements OnInit, AfterViewInit, OnDestroy {
   @ViewChild('cardElement') cardElementRef?: ElementRef<HTMLDivElement>;
 
   private readonly platformId = inject(PLATFORM_ID);
+  private readonly router = inject(Router);
+  private readonly ngZone = inject(NgZone);
   private readonly isBrowser = isPlatformBrowser(this.platformId);
   private readonly route = inject(ActivatedRoute, { optional: true });
-  private readonly publishableKey = 'pk_test_51T92klDfoOsvKeXTdBJDJbXzaRbwz4oNNQF7pNsQbFjV0KLwxVwQvlCHIzXpcY4DEvYozxrSGxup0YGuaQyLYjWl00EHouwGZN';
+  private readonly publishableKey = 'pk_test_51T92jkQdO08Nbk2EpzE4U8yNig7EO2Q6etoAl3aWG2NcKeKX0WQL3X7hmjceOzXyfwUz07Enui94aHT2h159EdA3002ovxoko0';
 
   private stripe: any;
   private elements: any;
@@ -162,77 +164,80 @@ export class CompraComponent implements OnInit, AfterViewInit, OnDestroy {
   }
 
   async onSubmitPayment(event: Event): Promise<void> {
-  event.preventDefault();
+    event.preventDefault();
 
-  if (!this.card || !this.clientSecret || !this.isCardReady || this.isProcessing) {
-    return;
-  }
-
-  this.isProcessing = true;
-  this.cardError = '';
-
-  try {
-    const response = await this.stripe.confirmCardPayment(this.clientSecret, {
-      payment_method: {
-        card: this.card,
-      },
-    });
-
-    console.log('Respuesta Stripe:', response);
-
-    if (response.error) {
-      console.log('Error Stripe:', response.error);
-      this.cardError = response.error.message || 'Error al procesar el pago.';
+    if (!this.card || !this.clientSecret || !this.isCardReady || this.isProcessing) {
       return;
     }
 
-    if (response.paymentIntent?.status === 'succeeded') {
-      console.log('Pago correcto en Stripe');
+    this.isProcessing = true;
+    this.cardError = '';
 
-      const confirmPayload = {
-        paymentIntentId: response.paymentIntent.id,
-        clientSecret: this.clientSecret,
-        userToken: localStorage.getItem('authToken') ?? '',
-        idEspectaculo: this.idEspectaculo,
-        cantidadEntradas: this.idsEntradasSeleccionadas.length,
-        idsEntradas: this.idsEntradasSeleccionadas
-      };
-
-      console.log('Payload enviado a confirmarPago:', confirmPayload);
-
-      this.service.confirmarPago(confirmPayload).subscribe({
-        next: (serviceResponse: any) => {
-          console.log('Respuesta confirmarPago:', serviceResponse);
-          alert(serviceResponse?.mensaje || 'Pago confirmado');
-          this.clearPersistedReservationState();
-
-          if (serviceResponse?.pagoId) {
-            window.open(`http://localhost:8080/pagos/${serviceResponse.pagoId}/pdf`, '_blank');
-          }
-        },
-        error: (serviceError: any) => {
-          console.log('Error confirmarPago:', serviceError);
-          if (serviceError?.status === 409) {
-            this.liberarReservasActuales();
-            this.clearPersistedReservationState();
-          }
-          const msg = serviceError?.error?.message || serviceError?.message || 'Error al confirmar el pago';
-          alert(msg);
+    try {
+      const response = await this.stripe.confirmCardPayment(this.clientSecret, {
+        payment_method: {
+          card: this.card,
         },
       });
 
-      return;
-    }
+      console.log('Respuesta Stripe:', response);
 
-    this.cardError = 'El pago no se completó correctamente.';
-  } catch (error) {
-    console.log('Error general en onSubmitPayment:', error);
-    this.cardError = 'Se produjo un error al procesar el pago.';
-  } finally {
-    console.log('Fin del procesamiento');
-    this.isProcessing = false;
+      if (response.error) {
+        console.log('Error Stripe:', response.error);
+        this.cardError = response.error.message || 'Error al procesar el pago.';
+        return;
+      }
+
+      if (response.paymentIntent?.status === 'succeeded') {
+        console.log('Pago correcto en Stripe');
+
+        const confirmPayload = {
+          paymentIntentId: response.paymentIntent.id,
+          clientSecret: this.clientSecret,
+          userToken: localStorage.getItem('authToken') ?? '',
+          idEspectaculo: this.idEspectaculo,
+          cantidadEntradas: this.idsEntradasSeleccionadas.length,
+          idsEntradas: this.idsEntradasSeleccionadas
+        };
+
+        console.log('Payload enviado a confirmarPago:', confirmPayload);
+
+        this.service.confirmarPago(confirmPayload).subscribe({
+          next: (serviceResponse: any) => {
+            console.log('Respuesta confirmarPago:', serviceResponse);
+            this.ngZone.run(() => {
+              alert(serviceResponse?.mensaje || 'Pago confirmado');
+              this.clearPersistedReservationState();
+
+              if (serviceResponse?.pagoId) {
+                window.open(`http://localhost:8080/pagos/${serviceResponse.pagoId}/pdf`, '_blank');
+              }
+              window.location.href = '/espectaculos';
+            });
+          },
+          error: (serviceError: any) => {
+            console.log('Error confirmarPago:', serviceError);
+            if (serviceError?.status === 409) {
+              this.liberarReservasActuales();
+              this.clearPersistedReservationState();
+            }
+            const msg = serviceError?.error?.message || serviceError?.message || 'Error al confirmar el pago';
+            alert(msg);
+          },
+        });
+
+        return;
+      }
+
+      this.cardError = 'El pago no se completó correctamente.';
+    } catch (error) {
+      console.log('Error general en onSubmitPayment:', error);
+      this.cardError = 'Se produjo un error al procesar el pago.';
+    } finally {
+      console.log('Fin del procesamiento');
+      this.isProcessing = false;
+    }
   }
-}
 
   private ensureStripeInitialized(): boolean {
     if (!this.isBrowser) {

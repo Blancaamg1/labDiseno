@@ -68,8 +68,14 @@ export class HomeComponent implements OnInit {
     return `https://api.dicebear.com/8.x/initials/svg?seed=${encodeURIComponent(name)}`;
   }
 
+  showUserMenu = false;
+
+  toggleUserMenu() {
+    this.showUserMenu = !this.showUserMenu;
+  }
+
   logout() {
-    this.http.post('http://localhost:8081/users/logout', {}, {}).subscribe({
+    this.http.post('http://localhost:8081/users/logout', {}, { withCredentials: true }).subscribe({
       next: () => {
         this.clearLoggedUser();
         this.router.navigateByUrl('/');
@@ -79,5 +85,24 @@ export class HomeComponent implements OnInit {
         this.router.navigateByUrl('/');
       },
     });
+    this.showUserMenu = false;
+  }
+
+  cancelarCuenta() {
+    const confirmacion = window.confirm("¿Estás seguro de que quieres borrar tu cuenta de forma permanente? No podrás volver a iniciar sesión.");
+    if (confirmacion) {
+      const token = typeof localStorage !== 'undefined' ? localStorage.getItem('authToken') : null;
+      this.http.post('http://localhost:8081/users/cancelAccount', { token }).subscribe({
+        next: () => {
+          this.clearLoggedUser();
+          this.router.navigateByUrl('/');
+        },
+        error: () => {
+          this.clearLoggedUser();
+          this.router.navigateByUrl('/');
+        }
+      });
+      this.showUserMenu = false;
+    }
   }
 }

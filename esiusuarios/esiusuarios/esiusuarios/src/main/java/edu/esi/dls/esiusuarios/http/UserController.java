@@ -16,6 +16,7 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.server.ResponseStatusException;
+import org.springframework.web.bind.annotation.DeleteMapping;
 
 import edu.esi.dls.esiusuarios.dto.UserInfoDto;
 import edu.esi.dls.esiusuarios.services.UserService;
@@ -28,15 +29,14 @@ public class UserController {
     @Autowired
     private UserService service;
 
-
     @PostMapping("/login")
-    public HashMap<String, Object> login(HttpSession session, @RequestBody Map<String, String> credentials){
+    public HashMap<String, Object> login(HttpSession session, @RequestBody Map<String, String> credentials) {
         JSONObject jsonCredentials = new JSONObject(credentials);
         String name = jsonCredentials.optString("name").trim();
         String password = jsonCredentials.optString("pwd");
 
         String userId = this.service.login(name, password);
-        if(userId == null){
+        if (userId == null) {
             throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Invalid credentials");
         }
 
@@ -79,25 +79,26 @@ public class UserController {
     }
 
     @GetMapping("/me")
-    public String currentUser(HttpSession session){
+    public String currentUser(HttpSession session) {
         return this.service.getValidatedSessionUserName(session);
     }
 
     @PostMapping("/register")
-    public String register(@RequestBody Map<String, String> credentials){
+    public String register(@RequestBody Map<String, String> credentials) {
         JSONObject jsonCredentials = new JSONObject(credentials);
         String username = jsonCredentials.optString("username").trim();
         String email = jsonCredentials.optString("email").trim().toLowerCase();
         String pwd1 = jsonCredentials.optString("pwd1");
         String pwd2 = jsonCredentials.optString("pwd2");
 
-        if( username.isEmpty() || email.isEmpty() || pwd1.isEmpty() || pwd2.isEmpty()){
+        if (username.isEmpty() || email.isEmpty() || pwd1.isEmpty() || pwd2.isEmpty()) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Invalid credentials");
         }
 
         String result = this.service.register(username, email, pwd1, pwd2);
-        if(result == null){
-            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "No se pudo completar el registro. Los datos proporcionados no son validos.");
+        if (result == null) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST,
+                    "No se pudo completar el registro. Los datos proporcionados no son validos.");
         }
 
         return result;
@@ -138,5 +139,13 @@ public class UserController {
         return this.service.resetPassword(token, pwd1, pwd2);
     }
 
+    @PostMapping("/cancelAccount")
+    public HashMap<String, String> cancelAccount(@RequestBody Map<String, String> payload) {
+        String token = payload.get("token");
+        this.service.deleteAccount(token);
+        HashMap<String, String> result = new HashMap<>();
+        result.put("message", "Cuenta cancelada exitosamente");
+        return result;
+    }
 
 }

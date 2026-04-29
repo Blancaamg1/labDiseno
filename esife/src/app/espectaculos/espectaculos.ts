@@ -182,10 +182,27 @@ export class Espectaculos implements OnInit {
   });
 }
 
+  showUserMenu = false;
+
+  toggleUserMenu() {
+    this.showUserMenu = !this.showUserMenu;
+  }
+
   cerrarSesion() {
     this.authService.logout();
     this.loggedUser = null;
     this.userAvatarUrl = null;
+    this.showUserMenu = false;
+  }
+
+  cancelarCuenta() {
+    const confirmacion = window.confirm("¿Estás seguro de que quieres borrar tu cuenta de forma permanente? No podrás volver a iniciar sesión.");
+    if (confirmacion) {
+      this.authService.cancelAccount();
+      this.loggedUser = null;
+      this.userAvatarUrl = null;
+      this.showUserMenu = false;
+    }
   }
 
   onFiltroChange(): void {

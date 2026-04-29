@@ -50,8 +50,10 @@ public class UserService {
         this.tokenDao = tokenDao;
         this.userInputValidator = userInputValidator;
         if (repository.count() == 0) {
-            repository.save(new User("Pepe", "pepe@example.com", "pepe123", generateSessionToken(), System.currentTimeMillis()));
-            repository.save(new User("Ana", "ana@example.com", "ana123", generateSessionToken(), System.currentTimeMillis()));
+            repository.save(new User("Pepe", "pepe@example.com", "pepe123", generateSessionToken(),
+                    System.currentTimeMillis()));
+            repository.save(
+                    new User("Ana", "ana@example.com", "ana123", generateSessionToken(), System.currentTimeMillis()));
         }
     }
 
@@ -134,12 +136,11 @@ public class UserService {
 
         String confirmationToken = UUID.randomUUID().toString();
         Token tokenEntity = new Token(
-            confirmationToken,
-            Token.PURPOSE_EMAIL_CONFIRMATION,
-            LocalDateTime.now(),
-            LocalDateTime.now().plusHours(TOKEN_VALIDITY_HOURS),
-            newUser
-        );
+                confirmationToken,
+                Token.PURPOSE_EMAIL_CONFIRMATION,
+                LocalDateTime.now(),
+                LocalDateTime.now().plusHours(TOKEN_VALIDITY_HOURS),
+                newUser);
         tokenDao.save(tokenEntity);
 
         this.sendConfirmationEmail(newUser, tokenEntity);
@@ -150,7 +151,7 @@ public class UserService {
     @Transactional
     public String confirm(String tokenValue) {
         Token token = tokenDao.findByValueAndPurpose(tokenValue, Token.PURPOSE_EMAIL_CONFIRMATION)
-            .orElseThrow(() -> new IllegalArgumentException("Token de confirmación inválido"));
+                .orElseThrow(() -> new IllegalArgumentException("Token de confirmación inválido"));
 
         LocalDateTime now = LocalDateTime.now();
         if (token.isExpired(now)) {
@@ -187,12 +188,11 @@ public class UserService {
         }
 
         Token tokenEntity = new Token(
-            UUID.randomUUID().toString(),
-            Token.PURPOSE_PASSWORD_RESET,
-            now,
-            now.plusHours(RESET_TOKEN_VALIDITY_HOURS),
-            user
-        );
+                UUID.randomUUID().toString(),
+                Token.PURPOSE_PASSWORD_RESET,
+                now,
+                now.plusHours(RESET_TOKEN_VALIDITY_HOURS),
+                user);
         tokenDao.save(tokenEntity);
 
         this.sendResetPasswordEmail(user, tokenEntity);
@@ -209,7 +209,7 @@ public class UserService {
         this.userInputValidator.validatePasswordResetData(newPassword, confirmPassword);
 
         Token token = tokenDao.findByValueAndPurpose(tokenValue.trim(), Token.PURPOSE_PASSWORD_RESET)
-            .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Token de recuperacion invalido"));
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Token de recuperacion invalido"));
 
         LocalDateTime now = LocalDateTime.now();
         if (token.isUsed()) {
@@ -264,16 +264,17 @@ public class UserService {
             payload.put("subject", emailParameters.getString("subject"));
             payload.put("htmlContent", body);
 
-            LOGGER.info("Enviando correo de confirmacion a {} con asunto '{}'", forcedRecipientEmail, emailParameters.getString("subject"));
+            LOGGER.info("Enviando correo de confirmacion a {} con asunto '{}'", forcedRecipientEmail,
+                    emailParameters.getString("subject"));
 
             Manager.getInstance().getEmailService().sendEmail(
-                forcedRecipientEmail,
-                "endpoint", endPoint,
-                "headers", headers,
-                "payload", payload
-            );
+                    forcedRecipientEmail,
+                    "endpoint", endPoint,
+                    "headers", headers,
+                    "payload", payload);
         } catch (Exception e) {
-            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "No se pudo enviar email de confirmacion: " + e.getMessage());
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST,
+                    "No se pudo enviar email de confirmacion: " + e.getMessage());
         }
     }
 
@@ -309,20 +310,32 @@ public class UserService {
             payload.put("subject", "Recuperacion de contrasena");
             payload.put("htmlContent", body);
 
-            LOGGER.info("Enviando correo de recuperacion de contrasena a {} para usuario {}", forcedRecipientEmail, user.getEmail());
+            LOGGER.info("Enviando correo de recuperacion de contrasena a {} para usuario {}", forcedRecipientEmail,
+                    user.getEmail());
 
             Manager.getInstance().getEmailService().sendEmail(
-                forcedRecipientEmail,
-                "endpoint", endPoint,
-                "headers", headers,
-                "payload", payload
-            );
+                    forcedRecipientEmail,
+                    "endpoint", endPoint,
+                    "headers", headers,
+                    "payload", payload);
         } catch (Exception e) {
-            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "No se pudo enviar email de recuperacion: " + e.getMessage());
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST,
+                    "No se pudo enviar email de recuperacion: " + e.getMessage());
         }
     }
 
     private String generateSessionToken() {
         return UUID.randomUUID().toString();
+    }
+
+    @Transactional
+    public void deleteAccount(String userToken) {
+        Optional<User> userOpt = repository.findByToken(userToken);
+
+        if (userOpt.isPresent()) {
+            repository.delete(userOpt.get());
+        } else {
+            throw new ResponseStatusException(HttpStatus.NOT_FOUND, "No se encontro el usuario");
+        }
     }
 }

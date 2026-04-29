@@ -19,16 +19,20 @@
           <a routerLink="/register" class="btn-solid">Registrate</a>
         </ng-container>
         <ng-container *ngIf="loggedUser">
-          <div class="user-profile">
+          <div class="user-profile dropdown" (click)="toggleUserMenu()">
             <img
               *ngIf="userAvatarUrl"
               [src]="userAvatarUrl"
               [alt]="'Avatar de ' + loggedUser"
               class="user-avatar"
             />
-            <span class="user-name">{{ loggedUser }}</span>
+            <span class="user-name">{{ loggedUser }} ▼</span>
+
+            <div class="dropdown-menu" *ngIf="showUserMenu">
+              <button class="dropdown-item" (click)="logout()">Cerrar sesión</button>
+              <button class="dropdown-item text-danger" (click)="cancelarCuenta()">Cancelar cuenta</button>
+            </div>
           </div>
-          <button class="btn-logout" (click)="logout()">Cerrar sesión</button>
         </ng-container>
       </div>
     </nav>
