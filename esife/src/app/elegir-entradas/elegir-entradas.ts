@@ -1,6 +1,6 @@
 import { Component, OnInit, OnDestroy, DestroyRef, inject, ChangeDetectorRef } from '@angular/core';
 import { ActivatedRoute, Router, RouterModule } from '@angular/router';
-import { forkJoin } from 'rxjs';
+import { forkJoin, Observable } from 'rxjs';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { EspectaculosService } from '../espectaculos/espectaculos.service';
 import { CommonModule } from '@angular/common';
@@ -23,8 +23,7 @@ export class ElegirEntradas implements OnInit, OnDestroy {
   butacas: ButacaSvg[] = [];
   zonas: ZonaResumen[] = [];
 
-  idsButacasSeleccionadas = new Set<number>();
-  zonaSeleccionada: number | null = null;
+  idsEntradasSeleccionadas = new Set<number>();
 
   usaColaVirtual = false;
   puedeComprar = true;
@@ -34,7 +33,6 @@ export class ElegirEntradas implements OnInit, OnDestroy {
 
   tiempoRestante: number = 0;
   intervalId: any = null;
-  idEntradaZonaReservada: number | null = null;
 
   private destroyRef = inject(DestroyRef);
 
@@ -78,10 +76,8 @@ export class ElegirEntradas implements OnInit, OnDestroy {
       if (remaining > 0) {
         this.tiempoRestante = remaining;
 
-        const estado = this.storageService.loadSelectionState();
-        estado.idsSeleccionados.forEach((id: number) => this.idsButacasSeleccionadas.add(id));
-        this.zonaSeleccionada = estado.zonaSeleccionada;
-        this.idEntradaZonaReservada = estado.idEntradaZonaReservada;
+        const ids = this.storageService.loadSelectionState();
+        ids.forEach((id: number) => this.idsEntradasSeleccionadas.add(id));
 
         this.iniciarContadorLocal();
       } else {
@@ -91,11 +87,7 @@ export class ElegirEntradas implements OnInit, OnDestroy {
   }
 
   guardarEstadoSeleccion() {
-    this.storageService.saveSelectionState(
-      this.idsButacasSeleccionadas,
-      this.zonaSeleccionada,
-      this.idEntradaZonaReservada
-    );
+    this.storageService.saveSelectionState(this.idsEntradasSeleccionadas);
   }
 
   limpiarEstadoSeleccion() {
@@ -120,17 +112,12 @@ export class ElegirEntradas implements OnInit, OnDestroy {
 
           const userToken = this.storageService.getAuthToken();
           
-          const peticionesLiberar = [];
-          this.idsButacasSeleccionadas.forEach(id => {
+          const peticionesLiberar: Observable<any>[] = [];
+          this.idsEntradasSeleccionadas.forEach(id => {
              peticionesLiberar.push(this.reservasService.liberar(id, userToken));
           });
-          if (this.idEntradaZonaReservada != null) {
-             peticionesLiberar.push(this.reservasService.liberar(this.idEntradaZonaReservada, userToken));
-          }
 
-          this.idsButacasSeleccionadas.clear();
-          this.zonaSeleccionada = null;
-          this.idEntradaZonaReservada = null;
+          this.idsEntradasSeleccionadas.clear();
 
           if (peticionesLiberar.length > 0) {
              forkJoin(peticionesLiberar).subscribe({
@@ -272,16 +259,16 @@ export class ElegirEntradas implements OnInit, OnDestroy {
   }
 
   toggleButaca(butaca: ButacaSvg): void {
-    if ((!butaca.disponible && !this.idsButacasSeleccionadas.has(butaca.idEntrada)) || (this.usaColaVirtual && !this.puedeComprar)) {
+    if ((!butaca.disponible && !this.idsEntradasSeleccionadas.has(butaca.idEntrada)) || (this.usaColaVirtual && !this.puedeComprar)) {
       return;
     }
 
     const userToken = this.storageService.getAuthToken();
 
-    if (this.idsButacasSeleccionadas.has(butaca.idEntrada)) {
+    if (this.idsEntradasSeleccionadas.has(butaca.idEntrada)) {
       this.reservasService.liberar(butaca.idEntrada, userToken).subscribe(() => {
-        this.idsButacasSeleccionadas.delete(butaca.idEntrada);
-        if (this.idsButacasSeleccionadas.size === 0) {
+        this.idsEntradasSeleccionadas.delete(butaca.idEntrada);
+        if (this.idsEntradasSeleccionadas.size === 0) {
            this.limpiarEstadoSeleccion();
         } else {
            this.guardarEstadoSeleccion();
@@ -290,7 +277,7 @@ export class ElegirEntradas implements OnInit, OnDestroy {
       });
     } else {
       this.reservasService.reservar(butaca.idEntrada, userToken).subscribe(() => {
-        this.idsButacasSeleccionadas.add(butaca.idEntrada);
+        this.idsEntradasSeleccionadas.add(butaca.idEntrada);
         this.registrarReservaLocal();
         this.guardarEstadoSeleccion();
         this.cdr.detectChanges();
@@ -302,52 +289,67 @@ export class ElegirEntradas implements OnInit, OnDestroy {
   }
 
   estaSeleccionada(idEntrada: number): boolean {
-    return this.idsButacasSeleccionadas.has(idEntrada);
+    return this.idsEntradasSeleccionadas.has(idEntrada);
   }
 
   seleccionarZona(zona: number): void {
-    if (this.usaColaVirtual && !this.puedeComprar) {
+    this.incrementarEntradasZona(zona);
+  }
+
+  cantidadSeleccionadaZona(zona: number): number {
+    return Array.from(this.idsEntradasSeleccionadas).filter(id => {
+      const entrada = this.entradasMapa.find(e => e.idEntrada === id);
+      return entrada?.zona === zona;
+    }).length;
+  }
+
+  incrementarEntradasZona(zona: number): void {
+    if (this.usaColaVirtual && !this.puedeComprar) return;
+
+    const zonaInfo = this.zonas.find(z => z.zona === zona);
+    if (!zonaInfo || zonaInfo.disponibles <= 0) {
+      alert('No hay más entradas disponibles en esta zona.');
       return;
     }
 
+    const entradasDisponibles = this.entradasMapa.filter(e => e.zona === zona && e.disponible && !this.idsEntradasSeleccionadas.has(e.idEntrada));
+    if (entradasDisponibles.length === 0) {
+      alert('No hay más entradas disponibles en esta zona.');
+      return;
+    }
+
+    const idEntrada = entradasDisponibles[0].idEntrada;
     const userToken = this.storageService.getAuthToken();
 
-    if (this.zonaSeleccionada === zona) {
-      if (this.idEntradaZonaReservada != null) {
-         this.reservasService.liberar(this.idEntradaZonaReservada, userToken).subscribe(() => {
-            this.zonaSeleccionada = null;
-            this.idEntradaZonaReservada = null;
-            this.limpiarEstadoSeleccion();
-            this.cdr.detectChanges();
-         });
+    this.reservasService.reservar(idEntrada, userToken).subscribe(() => {
+      this.idsEntradasSeleccionadas.add(idEntrada);
+      this.registrarReservaLocal();
+      this.guardarEstadoSeleccion();
+      this.cdr.detectChanges();
+    }, err => {
+      alert('Error al reservar la entrada.');
+      this.cargarDatos(this.infoCompra?.idEspectaculo);
+    });
+  }
+
+  decrementarEntradasZona(zona: number): void {
+    const idParaLiberar = Array.from(this.idsEntradasSeleccionadas).find(id => {
+      const entrada = this.entradasMapa.find(e => e.idEntrada === id);
+      return entrada?.zona === zona;
+    });
+
+    if (!idParaLiberar) return;
+
+    const userToken = this.storageService.getAuthToken();
+    this.reservasService.liberar(idParaLiberar, userToken).subscribe(() => {
+      this.idsEntradasSeleccionadas.delete(idParaLiberar);
+      if (this.idsEntradasSeleccionadas.size === 0) {
+        this.limpiarEstadoSeleccion();
+      } else {
+        this.guardarEstadoSeleccion();
       }
-    } else {
-      const zonaInfo = this.zonas.find(z => z.zona === zona);
-      if (!zonaInfo || zonaInfo.disponibles <= 0) {
-        return;
-      }
-      
-      const entradasZona = this.entradasMapa.filter(e => e.zona === zona && e.disponible).map(e => e.idEntrada);
-      if (entradasZona.length === 0) {
-         alert('No hay entradas disponibles en la zona seleccionada.');
-         return;
-      }
-      const idEntrada = entradasZona[0];
-      
-      this.reservasService.reservar(idEntrada, userToken).subscribe(() => {
-         if (this.idEntradaZonaReservada != null) {
-            this.reservasService.liberar(this.idEntradaZonaReservada, userToken).subscribe();
-         }
-         this.zonaSeleccionada = zona;
-         this.idEntradaZonaReservada = idEntrada;
-         this.registrarReservaLocal();
-         this.guardarEstadoSeleccion();
-         this.cdr.detectChanges();
-      }, err => {
-         alert('Error al reservar la entrada en esta zona.');
-         this.cargarDatos(this.infoCompra?.idEspectaculo);
-      });
-    }
+      this.cdr.detectChanges();
+    });
   }
 
   disponiblesEnZona(zona: number): number {
@@ -361,22 +363,11 @@ export class ElegirEntradas implements OnInit, OnDestroy {
       return;
     }
 
-    let idsEntradas: number[] = [];
+    const idsEntradas = Array.from(this.idsEntradasSeleccionadas);
 
-    if (this.infoCompra?.modoSeleccion === 'ZONA') {
-      if (this.zonaSeleccionada == null || this.idEntradaZonaReservada == null) {
-        alert('Selecciona una zona antes de continuar.');
-        return;
-      }
-
-      idsEntradas = [this.idEntradaZonaReservada];
-    } else {
-      idsEntradas = Array.from(this.idsButacasSeleccionadas);
-
-      if (idsEntradas.length === 0) {
-        alert('No hay entradas seleccionadas.');
-        return;
-      }
+    if (idsEntradas.length === 0) {
+      alert('No hay entradas seleccionadas.');
+      return;
     }
 
     this.router.navigate(['/comprar'], {

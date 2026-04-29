@@ -56,49 +56,21 @@ export class ElegirEntradasStorageService {
     localStorage.removeItem(this.reservaExpiracionKey);
   }
 
-  saveSelectionState(idsSeleccionados: Set<number>, zonaSeleccionada: number | null, idEntradaZonaReservada: number | null): void {
+  saveSelectionState(idsSeleccionados: Set<number>): void {
     if (!this.isAvailable()) {
       return;
     }
 
     localStorage.setItem(this.entradasSeleccionadasKey, JSON.stringify(Array.from(idsSeleccionados)));
-
-    if (zonaSeleccionada != null) {
-      localStorage.setItem(this.zonaSeleccionadaKey, zonaSeleccionada.toString());
-    } else {
-      localStorage.removeItem(this.zonaSeleccionadaKey);
-    }
-
-    if (idEntradaZonaReservada != null) {
-      localStorage.setItem(this.idEntradaZonaReservadaKey, idEntradaZonaReservada.toString());
-    } else {
-      localStorage.removeItem(this.idEntradaZonaReservadaKey);
-    }
   }
 
-  loadSelectionState(): SeleccionPersistida {
+  loadSelectionState(): number[] {
     if (!this.isAvailable()) {
-      return {
-        idsSeleccionados: [],
-        zonaSeleccionada: null,
-        idEntradaZonaReservada: null
-      };
+      return [];
     }
 
     const idsRaw = localStorage.getItem(this.entradasSeleccionadasKey);
-    const idsSeleccionados = idsRaw ? (JSON.parse(idsRaw) as number[]) : [];
-
-    const zonaRaw = localStorage.getItem(this.zonaSeleccionadaKey);
-    const zonaSeleccionada = zonaRaw ? parseInt(zonaRaw, 10) : null;
-
-    const idZonaRaw = localStorage.getItem(this.idEntradaZonaReservadaKey);
-    const idEntradaZonaReservada = idZonaRaw ? parseInt(idZonaRaw, 10) : null;
-
-    return {
-      idsSeleccionados,
-      zonaSeleccionada,
-      idEntradaZonaReservada
-    };
+    return idsRaw ? (JSON.parse(idsRaw) as number[]) : [];
   }
 
   clearSelectionState(): void {
