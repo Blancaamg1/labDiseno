@@ -20,6 +20,7 @@ import edu.esi.ds.esientradas.dto.DtoConfirmarPagoRequest;
 import edu.esi.ds.esientradas.dto.DtoConfirmarPagoResponse;
 import edu.esi.ds.esientradas.model.PDFEntrada;
 import edu.esi.ds.esientradas.services.PagosService;
+import edu.esi.ds.esientradas.services.ComprasService;
 
 @RestController
 @CrossOrigin(
@@ -32,6 +33,9 @@ public class PagosController {
 
     @Autowired
     private PagosService service;
+
+    @Autowired
+    private ComprasService comprasService;
 
     @Autowired
     private PDFDao pdfDao;
@@ -49,7 +53,7 @@ public class PagosController {
     @PostMapping("/confirmarPago")
     public DtoConfirmarPagoResponse confirmarPago(@RequestBody DtoConfirmarPagoRequest request) {
         try {
-            return this.service.confirmarPago(request);
+            return this.comprasService.procesarCompra(request);
         } catch (ResponseStatusException ex) {
             throw ex;
         } catch (Exception ex) {

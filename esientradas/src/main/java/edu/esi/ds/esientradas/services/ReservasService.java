@@ -248,4 +248,39 @@ public class ReservasService {
             this.tokenDao.delete(token);
         }
     }
+
+    @Transactional
+    public void finalizarVenta(List<Long> idsEntradas, Long idEspectaculo) {
+        List<Entrada> entradas = this.entradaDao.findAllById(idsEntradas);
+
+        if (entradas.size() != idsEntradas.size()) {
+            throw new ResponseStatusException(
+                    HttpStatus.NOT_FOUND,
+                    "Alguna de las entradas seleccionadas no existe");
+        }
+
+        for (Entrada entrada : entradas) {
+            if (entrada.getEstado() == Estado.VENDIDA) {
+                throw new ResponseStatusException(
+                        HttpStatus.CONFLICT,
+                        "Alguna de las entradas seleccionadas ya no esta disponible");
+            }
+
+            if (idEspectaculo != null
+                    && entrada.getEspectaculo() != null
+                    && entrada.getEspectaculo().getId() != null
+                    && !entrada.getEspectaculo().getId().equals(idEspectaculo)) {
+                throw new ResponseStatusException(
+                        HttpStatus.CONFLICT,
+                        "Alguna entrada no pertenece al espectaculo indicado");
+            }
+        }
+
+        for (Entrada entrada : entradas) {
+            entrada.setEstado(Estado.VENDIDA);
+            entrada.setToken(null);
+        }
+
+        this.entradaDao.saveAll(entradas);
+    }
 }

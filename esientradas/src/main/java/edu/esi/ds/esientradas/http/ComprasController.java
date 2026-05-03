@@ -1,33 +1,32 @@
 package edu.esi.ds.esientradas.http;
 
-import java.io.IOException;
-
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.CrossOrigin;
-import org.springframework.web.bind.annotation.PutMapping;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.bind.annotation.RestController;
 
-import edu.esi.ds.esientradas.services.UsuarioService;
-import jakarta.servlet.http.HttpServletResponse;
-import jakarta.servlet.http.HttpSession;
+import edu.esi.ds.esientradas.dto.DtoConfirmarPagoRequest;
+import edu.esi.ds.esientradas.dto.DtoConfirmarPagoResponse;
+import edu.esi.ds.esientradas.services.ComprasService;
 
 @RestController
+@CrossOrigin(
+    origins = "http://localhost:4200",
+    methods = { RequestMethod.GET, RequestMethod.POST, RequestMethod.OPTIONS },
+    allowedHeaders = "*"
+)
 @RequestMapping("/compras")
 public class ComprasController {
 
     @Autowired
-    private UsuarioService usuarioService;
+    private ComprasService comprasService;
     
-    @PutMapping("/comprar")
-    public String comprar(HttpSession session, HttpServletResponse response, @RequestParam String userToken) throws IOException {
-        String sessionId = session.getId();
-        if(userToken == null || userToken.isEmpty()){
-           response.sendRedirect("https://www.uclm.es/");
-        }
-
-        return this.usuarioService.checkToken(userToken);
+    @PostMapping("/confirmar")
+    public DtoConfirmarPagoResponse confirmarCompra(@RequestBody DtoConfirmarPagoRequest request) {
+        return this.comprasService.procesarCompra(request);
     }
 
 }

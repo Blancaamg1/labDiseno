@@ -43,9 +43,6 @@ public class PagosService {
     private EntradaDao entradaDao;
 
     @Autowired
-    private PDFService pdfService;
-
-    @Autowired
     private ConfigurationDao configurationDao;
 
     public String prepararPago(Long centimos) throws StripeException {
@@ -143,16 +140,7 @@ public class PagosService {
                 pago.setIdEspectaculo(request.getIdEspectaculo() != null ? request.getIdEspectaculo() : 0L);
                 pago.setCantidadEntradas(request.getIdsEntradas().size());
 
-                this.reservarEntradasSeleccionadas(request.getIdEspectaculo(), request.getIdsEntradas());
                 pago = this.pagoDao.save(pago);
-            }
-
-            boolean pdfGenerado = false;
-            try {
-                this.pdfService.generarEntradaPDF(pago);
-                pdfGenerado = true;
-            } catch (Exception ex) {
-                pdfGenerado = false;
             }
 
             DtoConfirmarPagoResponse response = new DtoConfirmarPagoResponse();
@@ -161,7 +149,7 @@ public class PagosService {
             response.setEstadoStripe(stripeStatus);
             response.setEstadoPago(pago.getEstado());
             response.setYaConfirmado(yaConfirmado);
-            response.setPdfGenerado(pdfGenerado);
+            response.setPdfGenerado(false); // Gestionado por ComprasService
             response.setMensaje(yaConfirmado
                     ? "Pago ya confirmado previamente"
                     : "Pago confirmado correctamente");
@@ -193,38 +181,8 @@ public class PagosService {
         }
     }
 
-    private void reservarEntradasSeleccionadas(Long idEspectaculo, List<Long> idsEntradas) {
-        List<Entrada> entradas = this.entradaDao.findAllById(idsEntradas);
-
-        if (entradas.size() != idsEntradas.size()) {
-            throw new ResponseStatusException(
-                    HttpStatus.NOT_FOUND,
-                    "Alguna de las entradas seleccionadas no existe");
-        }
-
-        for (Entrada entrada : entradas) {
-            if (entrada.getEstado() == Estado.VENDIDA) {
-                throw new ResponseStatusException(
-                        HttpStatus.CONFLICT,
-                        "Alguna de las entradas seleccionadas ya no esta disponible");
-            }
-
-            if (idEspectaculo != null
-                    && entrada.getEspectaculo() != null
-                    && entrada.getEspectaculo().getId() != null
-                    && !entrada.getEspectaculo().getId().equals(idEspectaculo)) {
-                throw new ResponseStatusException(
-                        HttpStatus.CONFLICT,
-                        "Alguna entrada no pertenece al espectaculo indicado");
-            }
-        }
-
-        for (Entrada entrada : entradas) {
-            entrada.setEstado(Estado.VENDIDA);
-            entrada.setToken(null);
-        }
-
-        this.entradaDao.saveAll(entradas);
+    public Pago obtenerPago(Long idPago) {
+        return this.pagoDao.findById(idPago).orElse(null);
     }
 
     private String getStripeSecretKey() {
