@@ -12,8 +12,8 @@ export class Pagos {
       return this.http.post('http://localhost:8080/pagos/prepararPago', info, {responseType: 'text'});
     }
 
-    confirmarPago(info: any) {
-      return this.http.post('http://localhost:8080/pagos/confirmarPago', info);
+    confirmarCompra(info: any) {
+      return this.http.post('http://localhost:8080/compras/confirmar', info);
     }
 
 }

@@ -6,13 +6,14 @@ import { EspectaculosService } from '../espectaculos/espectaculos.service';
 import { CommonModule } from '@angular/common';
 import { ElegirEntradasStorageService } from './elegir-entradas-storage.service';
 import { ElegirEntradasMapService } from './elegir-entradas-map.service';
+import { FormsModule } from '@angular/forms';
 import { ButacaSvg, ColaEstadoDto, EntradaMapaDto, ZonaResumen } from './elegir-entradas.model';
 
 @Component({
   selector: 'app-elegir-entradas',
   templateUrl: './elegir-entradas.html',
   standalone: true,
-  imports: [CommonModule, RouterModule],
+  imports: [CommonModule, RouterModule, FormsModule],
   styleUrls: ['./elegir-entradas.css']
 })
 export class ElegirEntradas implements OnInit, OnDestroy {
@@ -33,6 +34,18 @@ export class ElegirEntradas implements OnInit, OnDestroy {
 
   tiempoRestante: number = 0;
   intervalId: any = null;
+
+  // Formulario PRECISA
+  plantasDisponibles: number[] = [];
+  filasDisponibles: number[] = [];
+  asientosFila: EntradaMapaDto[] = [];
+
+  selectedPlanta: number = 0;
+  selectedFila: number = 0;
+
+  get asientosSeleccionadosDetalle(): EntradaMapaDto[] {
+    return this.mapService.getDetallesSeleccion(this.entradasMapa, this.idsEntradasSeleccionadas);
+  }
 
   private destroyRef = inject(DestroyRef);
 
@@ -92,6 +105,11 @@ export class ElegirEntradas implements OnInit, OnDestroy {
 
   limpiarEstadoSeleccion() {
     this.storageService.clearAllReservationState();
+    if (this.intervalId) {
+      clearInterval(this.intervalId);
+      this.intervalId = null;
+    }
+    this.tiempoRestante = 0;
   }
 
   iniciarContadorLocal() {
@@ -182,6 +200,7 @@ export class ElegirEntradas implements OnInit, OnDestroy {
 
         if (!this.usaColaVirtual) {
           this.actualizarVisualizacion();
+          this.inicializarFormularioPrecisa();
         }
 
         this.cdr.detectChanges();
@@ -208,6 +227,7 @@ export class ElegirEntradas implements OnInit, OnDestroy {
         if (respuesta?.estado === 'ACTIVO' || respuesta?.puedeComprar === true) {
           this.puedeComprar = true;
           this.actualizarVisualizacion();
+          this.inicializarFormularioPrecisa();
         } else {
           this.puedeComprar = false;
         }
@@ -236,6 +256,7 @@ export class ElegirEntradas implements OnInit, OnDestroy {
           if (estado?.estado === 'ACTIVO' || estado?.puedeComprar === true) {
             this.puedeComprar = true;
             this.actualizarVisualizacion();
+            this.inicializarFormularioPrecisa();
 
             clearInterval(this.pollingCola);
             this.pollingCola = null;
@@ -374,6 +395,85 @@ export class ElegirEntradas implements OnInit, OnDestroy {
       queryParams: {
         idEspectaculo: idEspectaculo,
         idsEntradas: idsEntradas.join(',')
+      }
+    });
+  }
+
+  // Lógica del Formulario PRECISA
+  inicializarFormularioPrecisa() {
+    if (this.infoCompra?.modoSeleccion !== 'PRECISA') return;
+
+    this.plantasDisponibles = this.mapService.getPlantasDisponibles(this.entradasMapa);
+    
+    if (this.plantasDisponibles.length > 0) {
+      this.selectedPlanta = this.plantasDisponibles[0];
+      this.onPlantaChange();
+    }
+  }
+
+  onPlantaChange() {
+    this.filasDisponibles = this.mapService.getFilasDisponibles(this.entradasMapa, Number(this.selectedPlanta));
+    
+    if (this.filasDisponibles.length > 0) {
+      this.selectedFila = this.filasDisponibles[0];
+      this.onFilaChange();
+    } else {
+      this.selectedFila = 0;
+      this.asientosFila = [];
+    }
+  }
+
+  onFilaChange() {
+    this.asientosFila = this.mapService.getTodosAsientosFila(
+      this.entradasMapa, 
+      Number(this.selectedPlanta), 
+      Number(this.selectedFila)
+    );
+  }
+
+  toggleButacaPorId(idEntrada: number) {
+    if (this.estaSeleccionada(idEntrada)) {
+      this.deseleccionarEntrada(idEntrada);
+    } else {
+      this.seleccionarEntrada(idEntrada);
+    }
+  }
+
+  private seleccionarEntrada(idEntrada: number) {
+    const userToken = this.storageService.getAuthToken();
+    const sessionId = 'session-' + Date.now();
+
+    this.reservasService.reservar(idEntrada, userToken).subscribe({
+      next: () => {
+        this.idsEntradasSeleccionadas.add(idEntrada);
+        this.guardarEstadoSeleccion();
+        this.registrarReservaLocal();
+        this.cdr.detectChanges();
+        // Refrescamos disponibilidad en el formulario
+        this.onFilaChange();
+      },
+      error: (err) => {
+        console.error('Error al reservar', err);
+        alert('No se pudo reservar la entrada.');
+      }
+    });
+  }
+
+  private deseleccionarEntrada(idEntrada: number) {
+    const userToken = this.storageService.getAuthToken();
+    this.reservasService.liberar(idEntrada, userToken).subscribe({
+      next: () => {
+        this.idsEntradasSeleccionadas.delete(idEntrada);
+        
+        if (this.idsEntradasSeleccionadas.size === 0) {
+          this.limpiarEstadoSeleccion();
+        } else {
+          this.guardarEstadoSeleccion();
+        }
+        
+        this.cdr.detectChanges();
+        // Refrescamos disponibilidad en el formulario
+        this.onFilaChange();
       }
     });
   }

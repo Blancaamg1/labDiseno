@@ -219,4 +219,42 @@ export class ElegirEntradasMapService {
       y: y + marginY + (fila - 1) * pasoY
     };
   }
+
+  // --- LÓGICA DE FORMULARIO PRECISA ---
+  getPlantasDisponibles(entradas: EntradaMapaDto[]): number[] {
+    const plantas = new Set<number>();
+    entradas.forEach(e => {
+      if (e.planta !== undefined) plantas.add(e.planta);
+    });
+    return Array.from(plantas).sort((a, b) => a - b);
+  }
+
+  getFilasDisponibles(entradas: EntradaMapaDto[], planta: number): number[] {
+    const filas = new Set<number>();
+    entradas.forEach(e => {
+      if (e.planta === planta && e.fila !== undefined) {
+        filas.add(e.fila);
+      }
+    });
+    return Array.from(filas).sort((a, b) => a - b);
+  }
+
+  getAsientosDisponibles(entradas: EntradaMapaDto[], planta: number, fila: number, idsSeleccionados: Set<number>): EntradaMapaDto[] {
+    return entradas.filter(e => 
+      e.planta === planta && 
+      e.fila === fila && 
+      (e.disponible || idsSeleccionados.has(e.idEntrada))
+    ).sort((a, b) => (a.columna ?? 0) - (b.columna ?? 0));
+  }
+
+  getTodosAsientosFila(entradas: EntradaMapaDto[], planta: number, fila: number): EntradaMapaDto[] {
+    return entradas.filter(e => 
+      e.planta === planta && 
+      e.fila === fila
+    ).sort((a, b) => (a.columna ?? 0) - (b.columna ?? 0));
+  }
+
+  getDetallesSeleccion(entradas: EntradaMapaDto[], idsSeleccionados: Set<number>): EntradaMapaDto[] {
+    return entradas.filter(e => idsSeleccionados.has(e.idEntrada));
+  }
 }

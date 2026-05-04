@@ -20,7 +20,6 @@ import edu.esi.ds.esientradas.dto.DtoConfirmarPagoRequest;
 import edu.esi.ds.esientradas.dto.DtoConfirmarPagoResponse;
 import edu.esi.ds.esientradas.model.PDFEntrada;
 import edu.esi.ds.esientradas.services.PagosService;
-import edu.esi.ds.esientradas.services.ComprasService;
 
 @RestController
 @CrossOrigin(
@@ -35,9 +34,6 @@ public class PagosController {
     private PagosService service;
 
     @Autowired
-    private ComprasService comprasService;
-
-    @Autowired
     private PDFDao pdfDao;
 
     @PostMapping("/prepararPago")
@@ -50,16 +46,6 @@ public class PagosController {
         }
     }
 
-    @PostMapping("/confirmarPago")
-    public DtoConfirmarPagoResponse confirmarPago(@RequestBody DtoConfirmarPagoRequest request) {
-        try {
-            return this.comprasService.procesarCompra(request);
-        } catch (ResponseStatusException ex) {
-            throw ex;
-        } catch (Exception ex) {
-            throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, "Error al confirmar el pago", ex);
-        }
-    }
 
     @GetMapping("/{idPago}/pdf")
     public ResponseEntity<byte[]> descargarPdf(@PathVariable Long idPago) {

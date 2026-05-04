@@ -202,7 +202,7 @@ export class CompraComponent implements OnInit, AfterViewInit, OnDestroy {
 
         console.log('Payload enviado a confirmarPago:', confirmPayload);
 
-        this.service.confirmarPago(confirmPayload).subscribe({
+        this.service.confirmarCompra(confirmPayload).subscribe({
           next: (serviceResponse: any) => {
             console.log('Respuesta confirmarPago:', serviceResponse);
             this.ngZone.run(() => {

@@ -34,7 +34,7 @@ public class PagosService {
     @Autowired
     private UsuarioService usuarioService;
 
-    private static final String FALLBACK_STRIPE_SECRET_KEY = "";
+    private static final String FALLBACK_STRIPE_SECRET_KEY = "tu_secret_key_aqui";
 
     @Autowired
     private PagoDao pagoDao;
