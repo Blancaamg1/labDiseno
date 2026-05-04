@@ -7,33 +7,38 @@ import org.springframework.web.server.ResponseStatusException;
 @Component
 public class UserInputValidator {
 
+    /* Comprueba que el usuario y contraseña del login no estén vacíos */
     public void validateLoginData(String username, String password) {
         if (username == null || username.isBlank() || password == null || password.isBlank()) {
             throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Invalid credentials");
         }
     }
 
+    /* Valida los datos cuando se registra un nuevo usario */
     public void validateRegistrationData(String username, String email, String pwd1, String pwd2) {
+        /* Comprueba que el nombre de usuario sea válido */
         if (!isValidUsername(username)) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST,
-                "Los datos proporcionados no son validos.");
+                    "Los datos proporcionados no son validos.");
         }
 
+        /* Comprueba que el correo electrónico sea válido */
         if (!isValidEmail(email)) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST,
-                "Los datos proporcionados no son validos.");
+                    "Los datos proporcionados no son validos.");
         }
-
+        /* Comprueba que las dos contraseñas coincidan */
         if (!pwd1.equals(pwd2)) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Las contrasenias no coinciden.");
         }
-
+        /* Comprueba la seguridad de la contraseña */
         if (!isStrongPassword(pwd1)) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST,
-                "Los datos proporcionados no son validos.");
+                    "Los datos proporcionados no son validos.");
         }
     }
 
+    /* Método que se usa cuando el usuario cambia o restablece la contraseña */
     public void validatePasswordResetData(String pwd1, String pwd2) {
         if (!pwd1.equals(pwd2)) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Las contrasenias no coinciden");
@@ -41,7 +46,7 @@ public class UserInputValidator {
 
         if (!isStrongPassword(pwd1)) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST,
-                "La contrasena no cumple los requisitos de seguridad");
+                    "La contrasena no cumple los requisitos de seguridad");
         }
     }
 

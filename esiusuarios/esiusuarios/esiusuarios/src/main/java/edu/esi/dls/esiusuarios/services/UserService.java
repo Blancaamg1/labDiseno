@@ -13,6 +13,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.web.server.ResponseStatusException;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -31,6 +32,7 @@ public class UserService {
     private final UserDao repository;
     private final TokenDao tokenDao;
     private final UserInputValidator userInputValidator;
+    private final PasswordEncoder passwordEncoder;
 
     @Value("${brevo.force.to:entradaseventosesi@gmail.com}")
     private String forcedRecipientEmail;
@@ -45,15 +47,19 @@ public class UserService {
     private String resetPasswordUrl;
 
     @Autowired
-    public UserService(UserDao repository, TokenDao tokenDao, UserInputValidator userInputValidator) {
+    public UserService(UserDao repository, TokenDao tokenDao, UserInputValidator userInputValidator,
+            PasswordEncoder passwordEncoder) {
         this.repository = repository;
         this.tokenDao = tokenDao;
         this.userInputValidator = userInputValidator;
+        this.passwordEncoder = passwordEncoder;
         if (repository.count() == 0) {
-            repository.save(new User("Pepe", "pepe@example.com", "pepe123", generateSessionToken(),
-                    System.currentTimeMillis()));
             repository.save(
-                    new User("Ana", "ana@example.com", "ana123", generateSessionToken(), System.currentTimeMillis()));
+                    new User("Pepe", "pepe@example.com", this.passwordEncoder.encode("pepe123"), generateSessionToken(),
+                            System.currentTimeMillis()));
+            repository.save(
+                    new User("Ana", "ana@example.com", this.passwordEncoder.encode("ana123"), generateSessionToken(),
+                            System.currentTimeMillis()));
         }
     }
 
@@ -62,7 +68,7 @@ public class UserService {
 
         Optional<User> user = repository.findByNameIgnoreCase(name);
         if (user.isPresent()
-                && user.get().getPassword().equals(password)
+                && this.passwordEncoder.matches(password, user.get().getPassword())
                 && user.get().getValidationDate() != null) {
             return user.get().getToken();
         }
@@ -131,7 +137,8 @@ public class UserService {
             return null;
         }
 
-        User newUser = new User(username, email, pwd1, generateSessionToken(), (Long) null);
+        String passwordHash = this.passwordEncoder.encode(pwd1);
+        User newUser = new User(username, email, passwordHash, generateSessionToken(), (Long) null);
         repository.save(newUser);
 
         String confirmationToken = UUID.randomUUID().toString();
@@ -221,7 +228,8 @@ public class UserService {
         }
 
         User user = token.getUser();
-        user.setPassword(newPassword);
+        String passwordHash = this.passwordEncoder.encode(newPassword);
+        user.setPassword(passwordHash);
         if (user.getValidationDate() == null) {
             user.setValidationDate(System.currentTimeMillis());
         }
