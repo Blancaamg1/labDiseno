@@ -54,7 +54,7 @@ public class ColaVirtualService {
 
         this.actualizarCola(idEspectaculo);
 
-        Optional<ColaVirtual> existente = this.colaVirtualDao.findByIdEspectaculoAndIdUsuarioAndEstadoIn(
+        Optional<ColaVirtual> existente = this.colaVirtualDao.findByEspectaculo_IdAndIdUsuarioAndEstadoIn(
                 idEspectaculo,
                 usuario.getId(),
                 Arrays.asList("ESPERANDO", "ACTIVO")
@@ -64,7 +64,7 @@ public class ColaVirtualService {
             return this.construirDto(existente.get(), idEspectaculo);
         }
 
-        List<ColaVirtual> colaActual = this.colaVirtualDao.findByIdEspectaculoAndEstadoInOrderByFechaEntradaAsc(
+        List<ColaVirtual> colaActual = this.colaVirtualDao.findByEspectaculo_IdAndEstadoInOrderByFechaEntradaAsc(
                 idEspectaculo,
                 Arrays.asList("ESPERANDO", "ACTIVO")
         );
@@ -104,7 +104,7 @@ public class ColaVirtualService {
 
         this.actualizarCola(idEspectaculo);
 
-        Optional<ColaVirtual> colaOpt = this.colaVirtualDao.findByIdEspectaculoAndIdUsuarioAndEstadoIn(
+        Optional<ColaVirtual> colaOpt = this.colaVirtualDao.findByEspectaculo_IdAndIdUsuarioAndEstadoIn(
                 idEspectaculo,
                 usuario.getId(),
                 Arrays.asList("ESPERANDO", "ACTIVO")
@@ -137,7 +137,7 @@ public class ColaVirtualService {
             cola.setPosicion(personasRestantes + 1);
 
             if (personasRestantes <= 0) {
-                List<ColaVirtual> activos = this.colaVirtualDao.findByIdEspectaculoAndEstadoOrderByFechaEntradaAsc(
+                List<ColaVirtual> activos = this.colaVirtualDao.findByEspectaculo_IdAndEstadoOrderByFechaEntradaAsc(
                         idEspectaculo,
                         "ACTIVO"
                 );
@@ -164,7 +164,7 @@ public class ColaVirtualService {
             throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Usuario no identificado");
         }
 
-        Optional<ColaVirtual> colaOpt = this.colaVirtualDao.findByIdEspectaculoAndIdUsuarioAndEstadoIn(
+        Optional<ColaVirtual> colaOpt = this.colaVirtualDao.findByEspectaculo_IdAndIdUsuarioAndEstadoIn(
                 idEspectaculo,
                 usuario.getId(),
                 Arrays.asList("ESPERANDO", "ACTIVO")
@@ -181,7 +181,7 @@ public class ColaVirtualService {
     }
 
     private void actualizarCola(Long idEspectaculo) {
-        List<ColaVirtual> activos = this.colaVirtualDao.findByIdEspectaculoAndEstadoOrderByFechaEntradaAsc(
+        List<ColaVirtual> activos = this.colaVirtualDao.findByEspectaculo_IdAndEstadoOrderByFechaEntradaAsc(
                 idEspectaculo,
                 "ACTIVO"
         );
@@ -194,7 +194,7 @@ public class ColaVirtualService {
             }
         }
 
-        List<ColaVirtual> activosDespues = this.colaVirtualDao.findByIdEspectaculoAndEstadoOrderByFechaEntradaAsc(
+        List<ColaVirtual> activosDespues = this.colaVirtualDao.findByEspectaculo_IdAndEstadoOrderByFechaEntradaAsc(
                 idEspectaculo,
                 "ACTIVO"
         );
@@ -203,7 +203,7 @@ public class ColaVirtualService {
             return;
         }
 
-        List<ColaVirtual> esperando = this.colaVirtualDao.findByIdEspectaculoAndEstadoOrderByFechaEntradaAsc(
+        List<ColaVirtual> esperando = this.colaVirtualDao.findByEspectaculo_IdAndEstadoOrderByFechaEntradaAsc(
                 idEspectaculo,
                 "ESPERANDO"
         );

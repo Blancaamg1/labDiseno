@@ -3,10 +3,16 @@ package edu.esi.ds.esientradas.model;
 import java.time.LocalDateTime;
 
 import jakarta.persistence.Column;
+import jakarta.persistence.ConstraintMode;
 import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
+import jakarta.persistence.FetchType;
+import jakarta.persistence.ForeignKey;
+import jakarta.persistence.JoinColumn;
+import jakarta.persistence.ManyToOne;
+import jakarta.persistence.Transient;
 import jakarta.persistence.Table;
 
 @Entity
@@ -20,8 +26,13 @@ public class Pago {
     @Column(name = "id_usuario", nullable = false)
     private Long idUsuario;
 
-    @Column(name = "id_espectaculo", nullable = false)
-    private Long idEspectaculo;
+    @ManyToOne(fetch = FetchType.LAZY)
+        @JoinColumn(
+            name = "id_espectaculo",
+            referencedColumnName = "id",
+            nullable = false,
+            foreignKey = @ForeignKey(ConstraintMode.NO_CONSTRAINT))
+    private Espectaculo espectaculo;
 
     @Column(name = "cantidad_entradas", nullable = false)
     private Integer cantidadEntradas;
@@ -67,11 +78,27 @@ public class Pago {
     }
 
     public Long getIdEspectaculo() {
-        return this.idEspectaculo;
+        return this.espectaculo == null ? null : this.espectaculo.getId();
     }
 
     public void setIdEspectaculo(Long idEspectaculo) {
-        this.idEspectaculo = idEspectaculo;
+        if (idEspectaculo == null) {
+            this.espectaculo = null;
+            return;
+        }
+
+        Espectaculo espectaculo = new Espectaculo();
+        espectaculo.setId(idEspectaculo);
+        this.espectaculo = espectaculo;
+    }
+
+    @Transient
+    public Espectaculo getEspectaculo() {
+        return this.espectaculo;
+    }
+
+    public void setEspectaculo(Espectaculo espectaculo) {
+        this.espectaculo = espectaculo;
     }
 
     public Integer getCantidadEntradas() {

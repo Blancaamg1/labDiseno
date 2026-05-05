@@ -16,8 +16,6 @@ import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.server.ResponseStatusException;
 
 import edu.esi.ds.esientradas.dao.PDFDao;
-import edu.esi.ds.esientradas.dto.DtoConfirmarPagoRequest;
-import edu.esi.ds.esientradas.dto.DtoConfirmarPagoResponse;
 import edu.esi.ds.esientradas.model.PDFEntrada;
 import edu.esi.ds.esientradas.services.PagosService;
 
@@ -49,7 +47,7 @@ public class PagosController {
 
     @GetMapping("/{idPago}/pdf")
     public ResponseEntity<byte[]> descargarPdf(@PathVariable Long idPago) {
-        PDFEntrada pdfEntrada = pdfDao.findByIdPago(idPago)
+        PDFEntrada pdfEntrada = pdfDao.findByPago_Id(idPago)
             .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "PDF no encontrado"));
 
         return ResponseEntity.ok()

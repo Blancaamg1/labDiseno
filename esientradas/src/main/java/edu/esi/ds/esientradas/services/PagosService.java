@@ -1,12 +1,12 @@
 package edu.esi.ds.esientradas.services;
 
 import java.time.LocalDateTime;
-import java.util.List;
 import java.util.Locale;
 import java.util.Optional;
 
 import org.json.JSONObject;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -17,15 +17,10 @@ import com.stripe.exception.StripeException;
 import com.stripe.model.PaymentIntent;
 import com.stripe.param.PaymentIntentCreateParams;
 
-import edu.esi.ds.esientradas.dao.ConfigurationDao;
-import edu.esi.ds.esientradas.dao.EntradaDao;
 import edu.esi.ds.esientradas.dao.PagoDao;
 import edu.esi.ds.esientradas.dto.DtoConfirmarPagoRequest;
 import edu.esi.ds.esientradas.dto.DtoConfirmarPagoResponse;
 import edu.esi.ds.esientradas.dto.DtoUsuarioInfo;
-import edu.esi.ds.esientradas.model.Configuration;
-import edu.esi.ds.esientradas.model.Entrada;
-import edu.esi.ds.esientradas.model.Estado;
 import edu.esi.ds.esientradas.model.Pago;
 
 @Service
@@ -34,16 +29,13 @@ public class PagosService {
     @Autowired
     private UsuarioService usuarioService;
 
-    private static final String FALLBACK_STRIPE_SECRET_KEY = "tu_secret_key_aqui";
+    private static final String FALLBACK_STRIPE_SECRET_KEY = "";
 
     @Autowired
     private PagoDao pagoDao;
 
-    @Autowired
-    private EntradaDao entradaDao;
-
-    @Autowired
-    private ConfigurationDao configurationDao;
+    @Value("${stripe.secret.key:}")
+    private String stripeSecretKey;
 
     public String prepararPago(Long centimos) throws StripeException {
         Stripe.apiKey = this.getStripeSecretKey();
@@ -186,12 +178,8 @@ public class PagosService {
     }
 
     private String getStripeSecretKey() {
-        Optional<Configuration> config = this.configurationDao.findById("stripe.secret.key");
-        if (config.isPresent()) {
-            String value = config.get().getValor();
-            if (value != null && !value.isBlank()) {
-                return value;
-            }
+        if (this.stripeSecretKey != null && !this.stripeSecretKey.isBlank()) {
+            return this.stripeSecretKey;
         }
 
         String envValue = System.getenv("STRIPE_SECRET_KEY");

@@ -101,7 +101,7 @@ public class ReservasService {
             throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Usuario no identificado");
         }
 
-        Optional<ColaVirtual> colaOpt = this.colaVirtualDao.findByIdEspectaculoAndIdUsuarioAndEstadoIn(
+        Optional<ColaVirtual> colaOpt = this.colaVirtualDao.findByEspectaculo_IdAndIdUsuarioAndEstadoIn(
                 espectaculo.getId(),
                 usuario.getId(),
                 Arrays.asList("ACTIVO", "ESPERANDO")

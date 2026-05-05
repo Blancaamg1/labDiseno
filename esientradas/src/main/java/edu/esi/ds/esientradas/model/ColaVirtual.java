@@ -2,10 +2,15 @@ package edu.esi.ds.esientradas.model;
 
 import java.time.LocalDateTime;
 
+import jakarta.persistence.ConstraintMode;
+import jakarta.persistence.FetchType;
 import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
+import jakarta.persistence.ForeignKey;
+import jakarta.persistence.JoinColumn;
+import jakarta.persistence.ManyToOne;
 
 @Entity
 public class ColaVirtual {
@@ -14,7 +19,14 @@ public class ColaVirtual {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    private Long idEspectaculo;
+    @ManyToOne(fetch = FetchType.LAZY)
+        @JoinColumn(
+            name = "id_espectaculo",
+            referencedColumnName = "id",
+            nullable = false,
+            foreignKey = @ForeignKey(ConstraintMode.NO_CONSTRAINT))
+    private Espectaculo espectaculo;
+
     private Long idUsuario;
 
     private Integer posicion;
@@ -38,11 +50,26 @@ public class ColaVirtual {
     }
 
     public Long getIdEspectaculo() {
-        return this.idEspectaculo;
+        return this.espectaculo == null ? null : this.espectaculo.getId();
     }
 
     public void setIdEspectaculo(Long idEspectaculo) {
-        this.idEspectaculo = idEspectaculo;
+        if (idEspectaculo == null) {
+            this.espectaculo = null;
+            return;
+        }
+
+        Espectaculo espectaculo = new Espectaculo();
+        espectaculo.setId(idEspectaculo);
+        this.espectaculo = espectaculo;
+    }
+
+    public Espectaculo getEspectaculo() {
+        return this.espectaculo;
+    }
+
+    public void setEspectaculo(Espectaculo espectaculo) {
+        this.espectaculo = espectaculo;
     }
 
     public Long getIdUsuario() {

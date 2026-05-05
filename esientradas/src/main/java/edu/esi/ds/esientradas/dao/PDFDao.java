@@ -10,5 +10,5 @@ import edu.esi.ds.esientradas.model.PDFEntrada;
 @Repository
 public interface PDFDao extends JpaRepository<PDFEntrada, Long> {
 
-    Optional<PDFEntrada> findByIdPago(Long idPago);
+    Optional<PDFEntrada> findByPago_Id(Long idPago);
 }

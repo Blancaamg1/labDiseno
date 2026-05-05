@@ -10,16 +10,16 @@ import edu.esi.ds.esientradas.model.ColaVirtual;
 
 public interface ColaVirtualDao extends JpaRepository<ColaVirtual, Long> {
 
-    Optional<ColaVirtual> findByIdEspectaculoAndIdUsuarioAndEstadoIn(
+    Optional<ColaVirtual> findByEspectaculo_IdAndIdUsuarioAndEstadoIn(
             Long idEspectaculo,
             Long idUsuario,
             List<String> estados);
 
-    List<ColaVirtual> findByIdEspectaculoAndEstadoOrderByFechaEntradaAsc(
+    List<ColaVirtual> findByEspectaculo_IdAndEstadoOrderByFechaEntradaAsc(
             Long idEspectaculo,
             String estado);
 
-    Optional<ColaVirtual> findByIdEspectaculoAndEstado(
+    Optional<ColaVirtual> findByEspectaculo_IdAndEstado(
             Long idEspectaculo,
             String estado);
 
@@ -27,7 +27,7 @@ public interface ColaVirtualDao extends JpaRepository<ColaVirtual, Long> {
             String estado,
             LocalDateTime fecha);
 
-    List<ColaVirtual> findByIdEspectaculoAndEstadoInOrderByFechaEntradaAsc(
+        List<ColaVirtual> findByEspectaculo_IdAndEstadoInOrderByFechaEntradaAsc(
             Long idEspectaculo,
             List<String> estados);
 }
