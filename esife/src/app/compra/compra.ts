@@ -4,6 +4,7 @@ import { Pagos } from '../pagos';
 import { EspectaculosService } from '../espectaculos/espectaculos.service';
 import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, Router } from '@angular/router';
+import { EntradaMapaDto } from '../elegir-entradas/elegir-entradas.model';
 
 declare global {
   interface Window {
@@ -37,7 +38,7 @@ export class CompraComponent implements OnInit, AfterViewInit, OnDestroy {
   private card: any;
   private isCardMounted = false;
 
-  precioUnitario: number = 20.0;
+  private precioTotalCentimos = 0;
   importe: number = 0;
   cantidadEntradas: number = 0;
   clientSecret?: string;
@@ -46,6 +47,7 @@ export class CompraComponent implements OnInit, AfterViewInit, OnDestroy {
   isProcessing = false;
   showPaymentForm = false;
   idEspectaculo?: number;
+  entradasMapa: EntradaMapaDto[] = [];
 
   tiempoRestante: number = 300; // 5 minutos en segundos
   intervalId: any;
@@ -61,14 +63,14 @@ export class CompraComponent implements OnInit, AfterViewInit, OnDestroy {
     this.route?.queryParamMap.subscribe((params) => {
       this.setIdEspectaculo(params.get('idEspectaculo'));
       this.setIdsEntradas(params.get('idsEntradas'));
-      this.actualizarImporte();
+      this.cargarEntradasDesdeBackend();
     });
 
     if (this.idEspectaculo === undefined && this.isBrowser) {
       const search = new URLSearchParams(window.location.search);
       this.setIdEspectaculo(search.get('idEspectaculo'));
       this.setIdsEntradas(search.get('idsEntradas'));
-      this.actualizarImporte();
+      this.cargarEntradasDesdeBackend();
     }
 
     if (this.isBrowser) {
@@ -137,9 +139,58 @@ export class CompraComponent implements OnInit, AfterViewInit, OnDestroy {
     return `${minutos}:${segundos < 10 ? '0' : ''}${segundos}`;
   }
 
+  private cargarEntradasDesdeBackend(): void {
+    if (!this.idEspectaculo) {
+      this.actualizarImporte();
+      return;
+    }
+
+    this.reservasService.obtenerEntradasMapa(this.idEspectaculo).subscribe({
+      next: (entradas: EntradaMapaDto[]) => {
+        this.entradasMapa = entradas ?? [];
+        this.actualizarImporte();
+      },
+      error: (error) => {
+        console.error('Error al cargar precios de entradas:', error);
+        this.entradasMapa = [];
+        this.actualizarImporte();
+      }
+    });
+  }
+
   private actualizarImporte(): void {
     this.cantidadEntradas = this.idsEntradasSeleccionadas.length;
-    this.importe = this.cantidadEntradas * this.precioUnitario;
+    const entradasSeleccionadas = this.entradasMapa.filter(entrada =>
+      this.idsEntradasSeleccionadas.includes(entrada.idEntrada)
+    );
+
+    if (entradasSeleccionadas.length !== this.idsEntradasSeleccionadas.length) {
+      this.precioTotalCentimos = 0;
+      this.importe = 0;
+      this.cardError = 'Las entradas seleccionadas no pertenecen al espectáculo actual o han expirado.';
+      this.isProcessing = true;
+      return;
+    }
+
+    const entradasInvalidas = entradasSeleccionadas.filter(entrada =>
+      this.idEspectaculo != null && entrada.idEspectaculo != null && entrada.idEspectaculo !== this.idEspectaculo
+    );
+
+    if (entradasInvalidas.length > 0) {
+      this.precioTotalCentimos = 0;
+      this.importe = 0;
+      this.cardError = 'Las entradas seleccionadas no pertenecen al espectáculo actual.';
+      this.isProcessing = true;
+      return;
+    }
+
+    this.precioTotalCentimos = entradasSeleccionadas
+      .reduce((total, entrada) => total + (entrada.precio ?? 0), 0);
+    this.importe = this.precioTotalCentimos / 100;
+    this.cardError = '';
+    if (this.tiempoRestante > 0) {
+      this.isProcessing = false;
+    }
   }
 
   irAPago() {
@@ -149,7 +200,7 @@ export class CompraComponent implements OnInit, AfterViewInit, OnDestroy {
     }
 
     const info = {
-      centimos: Math.floor(this.importe * 100)
+      centimos: this.precioTotalCentimos
     };
 
     this.service.prepararPago(info).subscribe(

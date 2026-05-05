@@ -10,10 +10,10 @@ type SeleccionPersistida = {
   providedIn: 'root'
 })
 export class ElegirEntradasStorageService {
-  private readonly reservaExpiracionKey = 'reservaExpiracion';
-  private readonly entradasSeleccionadasKey = 'entradasSeleccionadas';
-  private readonly zonaSeleccionadaKey = 'zonaSeleccionada';
-  private readonly idEntradaZonaReservadaKey = 'idEntradaZonaReservada';
+  private readonly reservaExpiracionKeyPrefix = 'reservaExpiracion';
+  private readonly entradasSeleccionadasKeyPrefix = 'entradasSeleccionadas';
+  private readonly zonaSeleccionadaKeyPrefix = 'zonaSeleccionada';
+  private readonly idEntradaZonaReservadaKeyPrefix = 'idEntradaZonaReservada';
 
   isAvailable(): boolean {
     return typeof localStorage !== 'undefined';
@@ -26,12 +26,16 @@ export class ElegirEntradasStorageService {
     return localStorage.getItem('authToken') || '';
   }
 
-  getReservaExpiracion(): number | null {
+  private buildKey(prefix: string, idEspectaculo?: number | null): string {
+    return idEspectaculo == null ? prefix : `${prefix}:${idEspectaculo}`;
+  }
+
+  getReservaExpiracion(idEspectaculo?: number | null): number | null {
     if (!this.isAvailable()) {
       return null;
     }
 
-    const exp = localStorage.getItem(this.reservaExpiracionKey);
+    const exp = localStorage.getItem(this.buildKey(this.reservaExpiracionKeyPrefix, idEspectaculo));
     if (!exp) {
       return null;
     }
@@ -40,51 +44,51 @@ export class ElegirEntradasStorageService {
     return Number.isNaN(parsed) ? null : parsed;
   }
 
-  setReservaExpiracion(expiracionMs: number): void {
+  setReservaExpiracion(expiracionMs: number, idEspectaculo?: number | null): void {
     if (!this.isAvailable()) {
       return;
     }
 
-    localStorage.setItem(this.reservaExpiracionKey, expiracionMs.toString());
+    localStorage.setItem(this.buildKey(this.reservaExpiracionKeyPrefix, idEspectaculo), expiracionMs.toString());
   }
 
-  clearReservaExpiracion(): void {
+  clearReservaExpiracion(idEspectaculo?: number | null): void {
     if (!this.isAvailable()) {
       return;
     }
 
-    localStorage.removeItem(this.reservaExpiracionKey);
+    localStorage.removeItem(this.buildKey(this.reservaExpiracionKeyPrefix, idEspectaculo));
   }
 
-  saveSelectionState(idsSeleccionados: Set<number>): void {
+  saveSelectionState(idsSeleccionados: Set<number>, idEspectaculo?: number | null): void {
     if (!this.isAvailable()) {
       return;
     }
 
-    localStorage.setItem(this.entradasSeleccionadasKey, JSON.stringify(Array.from(idsSeleccionados)));
+    localStorage.setItem(this.buildKey(this.entradasSeleccionadasKeyPrefix, idEspectaculo), JSON.stringify(Array.from(idsSeleccionados)));
   }
 
-  loadSelectionState(): number[] {
+  loadSelectionState(idEspectaculo?: number | null): number[] {
     if (!this.isAvailable()) {
       return [];
     }
 
-    const idsRaw = localStorage.getItem(this.entradasSeleccionadasKey);
+    const idsRaw = localStorage.getItem(this.buildKey(this.entradasSeleccionadasKeyPrefix, idEspectaculo));
     return idsRaw ? (JSON.parse(idsRaw) as number[]) : [];
   }
 
-  clearSelectionState(): void {
+  clearSelectionState(idEspectaculo?: number | null): void {
     if (!this.isAvailable()) {
       return;
     }
 
-    localStorage.removeItem(this.entradasSeleccionadasKey);
-    localStorage.removeItem(this.zonaSeleccionadaKey);
-    localStorage.removeItem(this.idEntradaZonaReservadaKey);
+    localStorage.removeItem(this.buildKey(this.entradasSeleccionadasKeyPrefix, idEspectaculo));
+    localStorage.removeItem(this.buildKey(this.zonaSeleccionadaKeyPrefix, idEspectaculo));
+    localStorage.removeItem(this.buildKey(this.idEntradaZonaReservadaKeyPrefix, idEspectaculo));
   }
 
-  clearAllReservationState(): void {
-    this.clearReservaExpiracion();
-    this.clearSelectionState();
+  clearAllReservationState(idEspectaculo?: number | null): void {
+    this.clearReservaExpiracion(idEspectaculo);
+    this.clearSelectionState(idEspectaculo);
   }
 }

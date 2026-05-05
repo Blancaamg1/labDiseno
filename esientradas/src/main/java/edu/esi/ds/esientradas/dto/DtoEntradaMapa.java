@@ -2,7 +2,9 @@ package edu.esi.ds.esientradas.dto;
 
 public class DtoEntradaMapa {
     private Long idEntrada;
+    private Long idEspectaculo;
     private boolean disponible;
+    private Long precio;
 
     private Integer fila;
     private Integer columna;
@@ -18,12 +20,28 @@ public class DtoEntradaMapa {
         this.idEntrada = idEntrada;
     }
 
+    public Long getIdEspectaculo() {
+        return idEspectaculo;
+    }
+
+    public void setIdEspectaculo(Long idEspectaculo) {
+        this.idEspectaculo = idEspectaculo;
+    }
+
     public boolean isDisponible() {
         return disponible;
     }
 
     public void setDisponible(boolean disponible) {
         this.disponible = disponible;
+    }
+
+    public Long getPrecio() {
+        return precio;
+    }
+
+    public void setPrecio(Long precio) {
+        this.precio = precio;
     }
 
     public Integer getFila() {

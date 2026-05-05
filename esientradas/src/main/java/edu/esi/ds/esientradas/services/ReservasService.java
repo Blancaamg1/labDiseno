@@ -213,7 +213,9 @@ public class ReservasService {
         for (Entrada entrada : entradas) {
             DtoEntradaMapa dto = new DtoEntradaMapa();
             dto.setIdEntrada(entrada.getId());
+            dto.setIdEspectaculo(entrada.getEspectaculo() == null ? null : entrada.getEspectaculo().getId());
             dto.setDisponible(entrada.getEstado() == Estado.DISPONIBLE);
+            dto.setPrecio(entrada.getPrecio());
 
             if (entrada instanceof Precisa) {
                 Precisa p = (Precisa) entrada;

@@ -20,6 +20,7 @@ export class ElegirEntradas implements OnInit, OnDestroy {
 
   infoCompra: any;
   entradasMapa: EntradaMapaDto[] = [];
+  idEspectaculoActual: number | null = null;
 
   butacas: ButacaSvg[] = [];
   zonas: ZonaResumen[] = [];
@@ -64,7 +65,9 @@ export class ElegirEntradas implements OnInit, OnDestroy {
       .subscribe(params => {
         const idStr = params.get('idEspectaculo');
         if (idStr) {
-          this.cargarDatos(Number(idStr));
+          this.idEspectaculoActual = Number(idStr);
+          this.idsEntradasSeleccionadas.clear();
+          this.cargarDatos(this.idEspectaculoActual);
         }
       });
     
@@ -83,13 +86,13 @@ export class ElegirEntradas implements OnInit, OnDestroy {
   }
 
   verificarContadorExistente() {
-    const exp = this.storageService.getReservaExpiracion();
+    const exp = this.storageService.getReservaExpiracion(this.idEspectaculoActual);
     if (exp != null) {
       const remaining = Math.floor((exp - Date.now()) / 1000);
       if (remaining > 0) {
         this.tiempoRestante = remaining;
 
-        const ids = this.storageService.loadSelectionState();
+        const ids = this.storageService.loadSelectionState(this.idEspectaculoActual);
         ids.forEach((id: number) => this.idsEntradasSeleccionadas.add(id));
 
         this.iniciarContadorLocal();
@@ -100,11 +103,11 @@ export class ElegirEntradas implements OnInit, OnDestroy {
   }
 
   guardarEstadoSeleccion() {
-    this.storageService.saveSelectionState(this.idsEntradasSeleccionadas);
+    this.storageService.saveSelectionState(this.idsEntradasSeleccionadas, this.idEspectaculoActual);
   }
 
   limpiarEstadoSeleccion() {
-    this.storageService.clearAllReservationState();
+    this.storageService.clearAllReservationState(this.idEspectaculoActual);
     if (this.intervalId) {
       clearInterval(this.intervalId);
       this.intervalId = null;
@@ -116,7 +119,7 @@ export class ElegirEntradas implements OnInit, OnDestroy {
     if (!this.storageService.isAvailable()) return;
     if (this.intervalId) return;
     this.intervalId = setInterval(() => {
-      const exp = this.storageService.getReservaExpiracion();
+      const exp = this.storageService.getReservaExpiracion(this.idEspectaculoActual);
       if (exp != null) {
         const remaining = Math.floor((exp - Date.now()) / 1000);
         if (remaining > 0) {
@@ -170,8 +173,8 @@ export class ElegirEntradas implements OnInit, OnDestroy {
 
   registrarReservaLocal() {
     if (!this.storageService.isAvailable()) return;
-    if (this.storageService.getReservaExpiracion() == null) {
-      this.storageService.setReservaExpiracion(Date.now() + 300000);
+    if (this.storageService.getReservaExpiracion(this.idEspectaculoActual) == null) {
+      this.storageService.setReservaExpiracion(Date.now() + 300000, this.idEspectaculoActual);
       this.verificarContadorExistente();
     }
   }
@@ -385,6 +388,11 @@ export class ElegirEntradas implements OnInit, OnDestroy {
     }
 
     const idsEntradas = Array.from(this.idsEntradasSeleccionadas);
+
+    if (this.idEspectaculoActual != null && Number(idEspectaculo) !== this.idEspectaculoActual) {
+      alert('El espectáculo actual no coincide con la selección activa.');
+      return;
+    }
 
     if (idsEntradas.length === 0) {
       alert('No hay entradas seleccionadas.');

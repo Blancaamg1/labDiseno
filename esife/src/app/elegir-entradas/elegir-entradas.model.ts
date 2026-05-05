@@ -1,6 +1,8 @@
 export interface EntradaMapaDto {
   idEntrada: number;
+  idEspectaculo?: number;
   disponible: boolean;
+  precio?: number;
   fila?: number;
   columna?: number;
   planta?: number;
