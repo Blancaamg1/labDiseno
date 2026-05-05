@@ -5,6 +5,7 @@ import { EspectaculosService } from '../espectaculos/espectaculos.service';
 import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, Router } from '@angular/router';
 import { EntradaMapaDto } from '../elegir-entradas/elegir-entradas.model';
+import { ElegirEntradasStorageService } from '../elegir-entradas/elegir-entradas-storage.service';
 
 declare global {
   interface Window {
@@ -57,6 +58,7 @@ export class CompraComponent implements OnInit, AfterViewInit, OnDestroy {
     private service: Pagos,
     private reservasService: EspectaculosService,
     private cdr: ChangeDetectorRef,
+    private storageService: ElegirEntradasStorageService
   ) { }
 
   ngOnInit(): void {
@@ -89,9 +91,9 @@ export class CompraComponent implements OnInit, AfterViewInit, OnDestroy {
   }
 
   private verificarContadorExistente(): void {
-    const exp = localStorage.getItem('reservaExpiracion');
+    const exp = this.storageService.getReservaExpiracion(this.idEspectaculo);
     if (exp) {
-      const remaining = Math.floor((parseInt(exp, 10) - Date.now()) / 1000);
+      const remaining = Math.floor((exp - Date.now()) / 1000);
       if (remaining > 0) {
         this.tiempoRestante = remaining;
         this.iniciarContador();
@@ -110,9 +112,9 @@ export class CompraComponent implements OnInit, AfterViewInit, OnDestroy {
   private iniciarContador(): void {
     if (this.intervalId) return;
     this.intervalId = setInterval(() => {
-      const exp = localStorage.getItem('reservaExpiracion');
+      const exp = this.storageService.getReservaExpiracion(this.idEspectaculo);
       if (exp) {
-        const remaining = Math.floor((parseInt(exp, 10) - Date.now()) / 1000);
+        const remaining = Math.floor((exp - Date.now()) / 1000);
         if (remaining > 0) {
           this.tiempoRestante = remaining;
           this.cdr.detectChanges();
@@ -245,7 +247,7 @@ export class CompraComponent implements OnInit, AfterViewInit, OnDestroy {
         const confirmPayload = {
           paymentIntentId: response.paymentIntent.id,
           clientSecret: this.clientSecret,
-          userToken: localStorage.getItem('authToken') ?? '',
+          userToken: this.storageService.getAuthToken(),
           idEspectaculo: this.idEspectaculo,
           cantidadEntradas: this.idsEntradasSeleccionadas.length,
           idsEntradas: this.idsEntradasSeleccionadas
@@ -392,7 +394,7 @@ export class CompraComponent implements OnInit, AfterViewInit, OnDestroy {
   }
 
   private liberarReservasActuales(): void {
-    const userToken = localStorage.getItem('authToken') ?? '';
+    const userToken = this.storageService.getAuthToken();
     if (!userToken) {
       return;
     }
@@ -407,13 +409,10 @@ export class CompraComponent implements OnInit, AfterViewInit, OnDestroy {
   }
 
   private clearPersistedSelectionOnly(): void {
-    localStorage.removeItem('entradasSeleccionadas');
-    localStorage.removeItem('zonaSeleccionada');
-    localStorage.removeItem('entradasZonaReservadas');
+    this.storageService.clearSelectionState(this.idEspectaculo);
   }
 
   private clearPersistedReservationState(): void {
-    localStorage.removeItem('reservaExpiracion');
-    this.clearPersistedSelectionOnly();
+    this.storageService.clearAllReservationState(this.idEspectaculo);
   }
 }

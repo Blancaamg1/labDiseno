@@ -19,12 +19,7 @@ public class PDFEntrada {
     private Long id;
 
     @OneToOne(fetch = FetchType.LAZY)
-        @JoinColumn(
-            name = "id_pago",
-            referencedColumnName = "id",
-            nullable = false,
-            unique = true,
-            foreignKey = @ForeignKey(ConstraintMode.NO_CONSTRAINT))
+    @JoinColumn(name = "id_pago", referencedColumnName = "id", nullable = false, unique = true)
     private Pago pago;
 
     @Lob
@@ -51,6 +46,10 @@ public class PDFEntrada {
         Pago pago = new Pago();
         pago.setId(idPago);
         this.pago = pago;
+    }
+
+    public Pago getPago() {
+        return this.pago;
     }
 
     public void setPago(Pago pago) {

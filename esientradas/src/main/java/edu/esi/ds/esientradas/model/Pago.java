@@ -1,18 +1,22 @@
 package edu.esi.ds.esientradas.model;
 
 import java.time.LocalDateTime;
+import java.util.HashSet;
+import java.util.Set;
+
+import com.fasterxml.jackson.annotation.JsonIgnore;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.ConstraintMode;
 import jakarta.persistence.Entity;
+import jakarta.persistence.FetchType;
+import jakarta.persistence.ForeignKey;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
-import jakarta.persistence.FetchType;
-import jakarta.persistence.ForeignKey;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
-import jakarta.persistence.Transient;
+import jakarta.persistence.OneToMany;
 import jakarta.persistence.Table;
 
 @Entity
@@ -27,11 +31,7 @@ public class Pago {
     private Long idUsuario;
 
     @ManyToOne(fetch = FetchType.LAZY)
-        @JoinColumn(
-            name = "id_espectaculo",
-            referencedColumnName = "id",
-            nullable = false,
-            foreignKey = @ForeignKey(ConstraintMode.NO_CONSTRAINT))
+    @JoinColumn(name = "id_espectaculo", referencedColumnName = "id", nullable = false)
     private Espectaculo espectaculo;
 
     @Column(name = "cantidad_entradas", nullable = false)
@@ -58,6 +58,10 @@ public class Pago {
     @Column(name = "fecha_pago", nullable = false)
     private LocalDateTime fechaPago;
 
+    @JsonIgnore
+    @OneToMany(mappedBy = "pago", fetch = FetchType.LAZY)
+    private Set<Entrada> entradas = new HashSet<>();
+
     public Pago() {
     }
 
@@ -77,22 +81,6 @@ public class Pago {
         this.idUsuario = idUsuario;
     }
 
-    public Long getIdEspectaculo() {
-        return this.espectaculo == null ? null : this.espectaculo.getId();
-    }
-
-    public void setIdEspectaculo(Long idEspectaculo) {
-        if (idEspectaculo == null) {
-            this.espectaculo = null;
-            return;
-        }
-
-        Espectaculo espectaculo = new Espectaculo();
-        espectaculo.setId(idEspectaculo);
-        this.espectaculo = espectaculo;
-    }
-
-    @Transient
     public Espectaculo getEspectaculo() {
         return this.espectaculo;
     }
@@ -163,5 +151,28 @@ public class Pago {
 
     public void setFechaPago(LocalDateTime fechaPago) {
         this.fechaPago = fechaPago;
+    }
+
+    public Set<Entrada> getEntradas() {
+        return this.entradas;
+    }
+
+    public void setEntradas(Set<Entrada> entradas) {
+        this.entradas = entradas;
+    }
+
+    public Long getIdEspectaculo() {
+        return this.espectaculo == null ? null : this.espectaculo.getId();
+    }
+
+    public void setIdEspectaculo(Long idEspectaculo) {
+        if (idEspectaculo == null) {
+            this.espectaculo = null;
+            return;
+        }
+
+        Espectaculo espectaculo = new Espectaculo();
+        espectaculo.setId(idEspectaculo);
+        this.espectaculo = espectaculo;
     }
 }

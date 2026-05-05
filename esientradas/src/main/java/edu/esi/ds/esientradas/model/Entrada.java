@@ -13,13 +13,16 @@ import jakarta.persistence.InheritanceType;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
 import jakarta.persistence.OneToOne;
+import jakarta.persistence.ConstraintMode;
+import jakarta.persistence.ForeignKey;
 
 @Entity
 @Inheritance(strategy = InheritanceType.JOINED)
 public abstract class Entrada {
-    @Id @GeneratedValue(strategy = jakarta.persistence.GenerationType.IDENTITY)
+    @Id
+    @GeneratedValue(strategy = jakarta.persistence.GenerationType.IDENTITY)
     protected Long id;
-    private Long precio;     // Ojo: en céntimos de euro
+    private Long precio; // Ojo: en céntimos de euro
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "espectaculo_id", nullable = false)
@@ -28,41 +31,61 @@ public abstract class Entrada {
     @Enumerated(EnumType.STRING)
     protected Estado estado;
 
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "id_pago", referencedColumnName = "id", nullable = true)
+    protected Pago pago;
+
     @OneToOne(mappedBy = "entrada")
-    //@JoinColumn(name = "token_valor", referencedColumnName = "valor")
+    // @JoinColumn(name = "token_valor", referencedColumnName = "valor")
     protected Token token;
 
     public Long getId() {
         return id;
     }
+
     public void setId(Long id) {
         this.id = id;
     }
-    
+
     @JsonIgnore
     public Espectaculo getEspectaculo() {
         return espectaculo;
     }
+
     public void setEspectaculo(Espectaculo espectaculo) {
         this.espectaculo = espectaculo;
     }
+
     public Estado getEstado() {
         return estado;
     }
+
     public void setEstado(Estado estado) {
         this.estado = estado;
     }
+
     public Long getPrecio() {
         return precio;
     }
+
     public void setPrecio(Long precio) {
         this.precio = precio;
+    }
+
+    @JsonIgnore
+    public Pago getPago() {
+        return pago;
+    }
+
+    public void setPago(Pago pago) {
+        this.pago = pago;
     }
 
     @JsonIgnore
     public Token getToken() {
         return token;
     }
+
     public void setToken(Token token) {
         this.token = token;
     }
