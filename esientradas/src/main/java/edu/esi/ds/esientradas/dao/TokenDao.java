@@ -8,4 +8,5 @@ import java.util.List;
 public interface TokenDao extends JpaRepository<Token, String>{
 
     List<Token> findByHoraLessThan(Long hora);
+    int countBySessionId(String sessionId);
 }

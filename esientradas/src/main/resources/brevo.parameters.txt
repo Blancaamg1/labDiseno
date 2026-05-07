@@ -9,5 +9,5 @@
     "name": "ESIUsuarios",
     "email": "entradaseventosesi@gmail.com"
   },
-  "subject": "Confirmacion de cuenta"
+  "subject": "Envio de pdf con entradas"
 }

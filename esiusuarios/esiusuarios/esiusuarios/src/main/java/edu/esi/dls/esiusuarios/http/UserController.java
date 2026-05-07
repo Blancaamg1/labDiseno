@@ -3,6 +3,7 @@ package edu.esi.dls.esiusuarios.http;
 import java.util.HashMap;
 import java.util.Map;
 
+import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpSession;
 
 import org.json.JSONObject;
@@ -18,6 +19,7 @@ import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.server.ResponseStatusException;
 
 import edu.esi.dls.esiusuarios.dto.UserInfoDto;
+import edu.esi.dls.esiusuarios.services.LoginAttemptService;
 import edu.esi.dls.esiusuarios.services.UserService;
 
 @RestController /* Usado para que los métodos devuelvan datos directamente al frontend */
@@ -28,17 +30,34 @@ public class UserController {
     @Autowired
     private UserService service;
 
+    @Autowired
+    private LoginAttemptService loginAttemptService;
+
     @PostMapping("/login") /* Recibe del frontend un JSON con el usuario y contraseña */
-    public HashMap<String, Object> login(HttpSession session, @RequestBody Map<String, String> credentials) {
-        JSONObject jsonCredentials = new JSONObject(credentials); /* Las convierte en un objeto JSON y las extrae */
+    public HashMap<String, Object> login(HttpSession session, HttpServletRequest request,
+            @RequestBody Map<String, String> credentials) {
+
+        String ip = request.getRemoteAddr();
+
+        /* Comprobamos si la IP está bloqueada por demasiados intentos fallidos */
+        if (loginAttemptService.estaBloqueada(ip)) {
+            long minutos = loginAttemptService.minutosRestantes(ip);
+            throw new ResponseStatusException(HttpStatus.TOO_MANY_REQUESTS,
+                    "Demasiados intentos fallidos. Prueba de nuevo en " + minutos + " minuto(s).");
+        }
+
+        JSONObject jsonCredentials = new JSONObject(credentials);
         String name = jsonCredentials.optString("name").trim();
         String password = jsonCredentials.optString("pwd");
 
         /* Llama al servicio */
         String userId = this.service.login(name, password);
         if (userId == null) {
+            loginAttemptService.registrarFallo(ip); // Contamos el fallo
             throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Invalid credentials");
         }
+
+        loginAttemptService.registrarExito(ip); // Login correcto: limpiamos el contador
 
         /* Si el login es correcto, se guarda el userId dentro de la sesión HTTP */
         session.setAttribute("userId", userId);
@@ -48,7 +67,6 @@ public class UserController {
         result.put("name", name);
         result.put("httpSessionId", session.getId());
         return result;
-
     }
 
     /* Comprueba qué usuario tiene sesión iniciada */

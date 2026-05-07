@@ -53,14 +53,6 @@ public class UserService {
         this.tokenDao = tokenDao;
         this.userInputValidator = userInputValidator;
         this.passwordEncoder = passwordEncoder;
-        if (repository.count() == 0) {
-            repository.save(
-                    new User("Pepe", "pepe@example.com", this.passwordEncoder.encode("pepe123"), generateSessionToken(),
-                            System.currentTimeMillis()));
-            repository.save(
-                    new User("Ana", "ana@example.com", this.passwordEncoder.encode("ana123"), generateSessionToken(),
-                            System.currentTimeMillis()));
-        }
     }
 
     public String login(String name, String password) {

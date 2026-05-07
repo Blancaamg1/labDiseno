@@ -201,6 +201,11 @@ export class CompraComponent implements OnInit, AfterViewInit, OnDestroy {
       return;
     }
 
+    if (this.cantidadEntradas > 12) {
+      alert('No se permite comprar más de 12 entradas por transacción.');
+      return;
+    }
+
     const info = {
       centimos: this.precioTotalCentimos
     };

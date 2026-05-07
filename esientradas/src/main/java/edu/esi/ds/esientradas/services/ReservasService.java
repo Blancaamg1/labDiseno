@@ -49,6 +49,10 @@ public class ReservasService {
 
     @Transactional
     public Long reservar(Long idEntrada, String sessionId, String userToken) {
+        if (this.tokenDao.countBySessionId(sessionId) >= 12) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "No se permite reservar más de 12 entradas simultáneamente.");
+        }
+
         Entrada entrada = this.entradaDao.findById(idEntrada)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Entrada no encontrada"));
 
@@ -253,6 +257,10 @@ public class ReservasService {
 
     @Transactional
     public void finalizarVenta(List<Long> idsEntradas, Long idEspectaculo) {
+        if (idsEntradas != null && idsEntradas.size() > 12) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "No se pueden comprar más de 12 entradas por transacción.");
+        }
+
         List<Entrada> entradas = this.entradaDao.findAllById(idsEntradas);
 
         if (entradas.size() != idsEntradas.size()) {

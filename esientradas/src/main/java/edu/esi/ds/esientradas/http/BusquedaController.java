@@ -17,44 +17,47 @@ import edu.esi.ds.esientradas.model.Escenario;
 import edu.esi.ds.esientradas.model.Espectaculo;
 import edu.esi.ds.esientradas.services.BusquedaService;
 import jakarta.websocket.server.PathParam;
+
 @RestController
-@RequestMapping("/busqueda") // Las peticiones del servicio saludar, se envian a la url http://localhost:8080/busqueda/saludar
+@RequestMapping("/busqueda") // Las peticiones del servicio saludar, se envian a la url
+                             // http://localhost:8080/busqueda/saludar
 // Un parámetro en la url se pone con un ? por ejemplo ?nombre=
-@CrossOrigin(origins = "*") // Permite que cualquier cliente pueda hacer peticiones a este servicio, sin importar su origen
+@CrossOrigin(origins = "http://localhost:4200") // Permite que el frontend de angular pueda hacer peticiones
 public class BusquedaController {
 
-    @Autowired // cuando revisa el código de esta clase al arrancar busca el busquedaservice, si no está creado, lo crea
+    @Autowired // cuando revisa el código de esta clase al arrancar busca el busquedaservice,
+               // si no está creado, lo crea
     private BusquedaService service;
 
-    @GetMapping("/getEntradas/{idEspectaculo}") 
-    public List<Entrada> getEntradas(@PathVariable Long idEspectaculo){
+    @GetMapping("/getEntradas/{idEspectaculo}")
+    public List<Entrada> getEntradas(@PathVariable Long idEspectaculo) {
         return this.service.getEntradas(idEspectaculo);
     }
-    
-     @GetMapping("/getNumeroDeEntradas") 
-    public Integer getNumeroDeEntradas(@RequestParam Long idEspectaculo){
+
+    @GetMapping("/getNumeroDeEntradas")
+    public Integer getNumeroDeEntradas(@RequestParam Long idEspectaculo) {
         return this.service.getNumeroDeEntradas(idEspectaculo);
     }
 
-     @GetMapping("/getEntradasLibres") 
-    public Integer getEntradasLibres(@RequestParam Long idEspectaculo){
+    @GetMapping("/getEntradasLibres")
+    public Integer getEntradasLibres(@RequestParam Long idEspectaculo) {
         return this.service.getEntradasLibres(idEspectaculo);
     }
 
-     @GetMapping("/getNumeroDeEntradasComoDto") 
-    public DtoEntradas getNumeroDeEntradasComoDto(@RequestParam Long idEspectaculo){
+    @GetMapping("/getNumeroDeEntradasComoDto")
+    public DtoEntradas getNumeroDeEntradasComoDto(@RequestParam Long idEspectaculo) {
         DtoEntradas dto = this.service.getNumeroDeEntradasComoDto(idEspectaculo);
         return dto;
     }
-    
+
     @GetMapping("/getEscenarios")
-    public List<Escenario> getEscenarios(){
+    public List<Escenario> getEscenarios() {
         return this.service.getEscenarios();
-    }    
+    }
 
     @GetMapping("/getEspectaculos")
-    public List<DtoEspectaculo> getEspectaculos(@RequestParam String artista){
-        List<Espectaculo> espectaculos =  this.service.getEspectaculos(artista);
+    public List<DtoEspectaculo> getEspectaculos(@RequestParam String artista) {
+        List<Espectaculo> espectaculos = this.service.getEspectaculos(artista);
 
         List<DtoEspectaculo> dtos = espectaculos.stream().map(e -> {
             DtoEspectaculo dto = new DtoEspectaculo();
@@ -66,11 +69,11 @@ public class BusquedaController {
         }).toList();
 
         return dtos;
-    }  
+    }
 
     @GetMapping("/getEspectaculos/{idEscenario}")
-    public List<DtoEspectaculo> getEspectaculos(@PathVariable Long idEscenario){
-        List<Espectaculo> espectaculos =  this.service.getEspectaculos(idEscenario);
+    public List<DtoEspectaculo> getEspectaculos(@PathVariable Long idEscenario) {
+        List<Espectaculo> espectaculos = this.service.getEspectaculos(idEscenario);
 
         List<DtoEspectaculo> dtos = espectaculos.stream().map(e -> {
             DtoEspectaculo dto = new DtoEspectaculo();
@@ -82,11 +85,10 @@ public class BusquedaController {
         }).toList();
 
         return dtos;
-    }  
+    }
 
-    
     @GetMapping("/saludar/{nombre}")
-    public String saludar(@PathVariable String nombre, @RequestParam String apellido){
+    public String saludar(@PathVariable String nombre, @RequestParam String apellido) {
         return "Hola " + nombre + " " + apellido + " ,esta es la busqueda de entradas";
     }
 }
