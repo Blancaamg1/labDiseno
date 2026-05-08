@@ -73,10 +73,7 @@
       </div>
 
       <div style="margin-top: 20px;">
-        <button
-          class="boton-continuar"
-          type="button"
-          *ngIf="!estaEnCola"
+        <button class="boton-continuar" type="button" *ngIf="!estaEnCola"
           (click)="entrarEnCola(infoCompra.idEspectaculo)">
           Entrar en cola
         </button>
@@ -101,11 +98,6 @@
         <p class="reserva-valor texto-secundario">
           {{ puedeComprar ? 'Sí' : 'No' }}
         </p>
-      </div>
-
-      <div class="reserva-bloque" *ngIf="estadoCola?.tokenTurno">
-        <span class="reserva-etiqueta">Token de turno</span>
-        <p class="reserva-valor texto-secundario">{{ estadoCola?.tokenTurno }}</p>
       </div>
     </aside>
   </section>
@@ -132,7 +124,7 @@
             <i class="fas fa-chair"></i>
             <h3>Selección de Butaca</h3>
           </div>
-          
+
           <div class="form-cuerpo">
             <div class="campo-seleccion">
               <label>Planta / Zona</label>
@@ -151,13 +143,11 @@
             <div class="campo-seleccion" *ngIf="asientosFila.length > 0">
               <label style="margin-top: 10px; display: block;">Selecciona tus butacas (Fila {{ selectedFila }})</label>
               <div class="selector-butacas-fila">
-                <button *ngFor="let b of asientosFila" 
-                        class="btn-butaca-inline" 
-                        [class.ocupada]="!b.disponible && !estaSeleccionada(b.idEntrada)"
-                        [class.seleccionada]="estaSeleccionada(b.idEntrada)"
-                        [disabled]="!b.disponible && !estaSeleccionada(b.idEntrada)"
-                        (click)="toggleButacaPorId(b.idEntrada)"
-                        title="Asiento {{ b.columna }}">
+                <button *ngFor="let b of asientosFila" class="btn-butaca-inline"
+                  [class.ocupada]="!b.disponible && !estaSeleccionada(b.idEntrada)"
+                  [class.seleccionada]="estaSeleccionada(b.idEntrada)"
+                  [disabled]="!b.disponible && !estaSeleccionada(b.idEntrada)" (click)="toggleButacaPorId(b.idEntrada)"
+                  title="Asiento {{ b.columna }}">
                   {{ b.columna }}
                 </button>
               </div>
@@ -166,7 +156,8 @@
 
           <div class="info-adicional-form">
             <div class="lista-butacas-wrapper" *ngIf="asientosSeleccionadosDetalle.length > 0">
-              <h4 style="margin-top: 0; color: #1e293b; font-size: 1rem;">Tus Entradas ({{ asientosSeleccionadosDetalle.length }})</h4>
+              <h4 style="margin-top: 0; color: #1e293b; font-size: 1rem;">Tus Entradas ({{
+                asientosSeleccionadosDetalle.length }})</h4>
               <ul class="lista-butacas-seleccionadas">
                 <li *ngFor="let b of asientosSeleccionadosDetalle" class="item-butaca-seleccionada">
                   <span>Planta {{ b.planta }} - Fila {{ b.fila }} - Asiento {{ b.columna }}</span>
@@ -195,49 +186,49 @@
               <rect x="350" y="250" width="300" height="150" rx="20" class="pista"></rect>
               <text x="500" y="335" text-anchor="middle" class="texto-zona">PISTA / ESCENARIO</text>
 
-              <path class="zona"
-                    [class.seleccionada-zona]="cantidadSeleccionadaZona(1) > 0"
-                    [class.ocupada-zona]="disponiblesEnZona(1) <= 0 && cantidadSeleccionadaZona(1) === 0"
-                    d="M250 90 Q500 20 750 90 L700 150 Q500 95 300 150 Z"
-                    (click)="seleccionarZona(1)">
+              <path class="zona" [class.seleccionada-zona]="cantidadSeleccionadaZona(1) > 0"
+                [class.ocupada-zona]="disponiblesEnZona(1) <= 0 && cantidadSeleccionadaZona(1) === 0"
+                d="M250 90 Q500 20 750 90 L700 150 Q500 95 300 150 Z" (click)="seleccionarZona(1)">
               </path>
 
-              <path class="zona"
-                    [class.seleccionada-zona]="cantidadSeleccionadaZona(2) > 0"
-                    [class.ocupada-zona]="disponiblesEnZona(2) <= 0 && cantidadSeleccionadaZona(2) === 0"
-                    d="M300 500 Q500 555 700 500 L750 560 Q500 630 250 560 Z"
-                    (click)="seleccionarZona(2)">
+              <path class="zona" [class.seleccionada-zona]="cantidadSeleccionadaZona(2) > 0"
+                [class.ocupada-zona]="disponiblesEnZona(2) <= 0 && cantidadSeleccionadaZona(2) === 0"
+                d="M300 500 Q500 555 700 500 L750 560 Q500 630 250 560 Z" (click)="seleccionarZona(2)">
               </path>
 
-              <path class="zona"
-                    [class.seleccionada-zona]="cantidadSeleccionadaZona(3) > 0"
-                    [class.ocupada-zona]="disponiblesEnZona(3) <= 0 && cantidadSeleccionadaZona(3) === 0"
-                    d="M100 180 Q55 325 100 470 L180 430 Q145 325 180 220 Z"
-                    (click)="seleccionarZona(3)">
+              <path class="zona" [class.seleccionada-zona]="cantidadSeleccionadaZona(3) > 0"
+                [class.ocupada-zona]="disponiblesEnZona(3) <= 0 && cantidadSeleccionadaZona(3) === 0"
+                d="M100 180 Q55 325 100 470 L180 430 Q145 325 180 220 Z" (click)="seleccionarZona(3)">
               </path>
 
-              <path class="zona"
-                    [class.seleccionada-zona]="cantidadSeleccionadaZona(4) > 0"
-                    [class.ocupada-zona]="disponiblesEnZona(4) <= 0 && cantidadSeleccionadaZona(4) === 0"
-                    d="M900 180 Q945 325 900 470 L820 430 Q855 325 820 220 Z"
-                    (click)="seleccionarZona(4)">
+              <path class="zona" [class.seleccionada-zona]="cantidadSeleccionadaZona(4) > 0"
+                [class.ocupada-zona]="disponiblesEnZona(4) <= 0 && cantidadSeleccionadaZona(4) === 0"
+                d="M900 180 Q945 325 900 470 L820 430 Q855 325 820 220 Z" (click)="seleccionarZona(4)">
               </path>
 
-              <text x="500" y="110" text-anchor="middle" class="texto-zona" [class.texto-seleccionado]="cantidadSeleccionadaZona(1) > 0">GRADA NORTE</text>
-              <text x="500" y="545" text-anchor="middle" class="texto-zona" [class.texto-seleccionado]="cantidadSeleccionadaZona(2) > 0">GRADA SUR</text>
-              <text x="145" y="330" text-anchor="middle" transform="rotate(-90 145 330)" class="texto-zona" [class.texto-seleccionado]="cantidadSeleccionadaZona(3) > 0">GRADA OESTE</text>
-              <text x="855" y="330" text-anchor="middle" transform="rotate(90 855 330)" class="texto-zona" [class.texto-seleccionado]="cantidadSeleccionadaZona(4) > 0">GRADA ESTE</text>
+              <text x="500" y="110" text-anchor="middle" class="texto-zona"
+                [class.texto-seleccionado]="cantidadSeleccionadaZona(1) > 0">GRADA NORTE</text>
+              <text x="500" y="545" text-anchor="middle" class="texto-zona"
+                [class.texto-seleccionado]="cantidadSeleccionadaZona(2) > 0">GRADA SUR</text>
+              <text x="145" y="330" text-anchor="middle" transform="rotate(-90 145 330)" class="texto-zona"
+                [class.texto-seleccionado]="cantidadSeleccionadaZona(3) > 0">GRADA OESTE</text>
+              <text x="855" y="330" text-anchor="middle" transform="rotate(90 855 330)" class="texto-zona"
+                [class.texto-seleccionado]="cantidadSeleccionadaZona(4) > 0">GRADA ESTE</text>
 
-              <text x="500" y="132" text-anchor="middle" class="texto-mini" [class.texto-seleccionado]="cantidadSeleccionadaZona(1) > 0">
+              <text x="500" y="132" text-anchor="middle" class="texto-mini"
+                [class.texto-seleccionado]="cantidadSeleccionadaZona(1) > 0">
                 {{ disponiblesEnZona(1) }} disponibles
               </text>
-              <text x="500" y="568" text-anchor="middle" class="texto-mini" [class.texto-seleccionado]="cantidadSeleccionadaZona(2) > 0">
+              <text x="500" y="568" text-anchor="middle" class="texto-mini"
+                [class.texto-seleccionado]="cantidadSeleccionadaZona(2) > 0">
                 {{ disponiblesEnZona(2) }} disponibles
               </text>
-              <text x="170" y="330" text-anchor="middle" transform="rotate(-90 170 330)" class="texto-mini" [class.texto-seleccionado]="cantidadSeleccionadaZona(3) > 0">
+              <text x="170" y="330" text-anchor="middle" transform="rotate(-90 170 330)" class="texto-mini"
+                [class.texto-seleccionado]="cantidadSeleccionadaZona(3) > 0">
                 {{ disponiblesEnZona(3) }}
               </text>
-              <text x="830" y="330" text-anchor="middle" transform="rotate(90 830 330)" class="texto-mini" [class.texto-seleccionado]="cantidadSeleccionadaZona(4) > 0">
+              <text x="830" y="330" text-anchor="middle" transform="rotate(90 830 330)" class="texto-mini"
+                [class.texto-seleccionado]="cantidadSeleccionadaZona(4) > 0">
                 {{ disponiblesEnZona(4) }}
               </text>
             </ng-container>
@@ -249,54 +240,52 @@
 
               <rect x="150" y="150" width="700" height="360" rx="25" class="base-plaza"></rect>
 
-              <rect class="zona"
-                    [class.seleccionada-zona]="cantidadSeleccionadaZona(1) > 0"
-                    [class.ocupada-zona]="disponiblesEnZona(1) <= 0 && cantidadSeleccionadaZona(1) === 0"
-                    x="250" y="150" width="500" height="90" rx="16"
-                    (click)="seleccionarZona(1)">
+              <rect class="zona" [class.seleccionada-zona]="cantidadSeleccionadaZona(1) > 0"
+                [class.ocupada-zona]="disponiblesEnZona(1) <= 0 && cantidadSeleccionadaZona(1) === 0" x="250" y="150"
+                width="500" height="90" rx="16" (click)="seleccionarZona(1)">
               </rect>
 
-              <rect class="zona"
-                    [class.seleccionada-zona]="cantidadSeleccionadaZona(2) > 0"
-                    [class.ocupada-zona]="disponiblesEnZona(2) <= 0 && cantidadSeleccionadaZona(2) === 0"
-                    x="220" y="260" width="560" height="110" rx="16"
-                    (click)="seleccionarZona(2)">
+              <rect class="zona" [class.seleccionada-zona]="cantidadSeleccionadaZona(2) > 0"
+                [class.ocupada-zona]="disponiblesEnZona(2) <= 0 && cantidadSeleccionadaZona(2) === 0" x="220" y="260"
+                width="560" height="110" rx="16" (click)="seleccionarZona(2)">
               </rect>
 
-              <rect class="zona"
-                    [class.seleccionada-zona]="cantidadSeleccionadaZona(3) > 0"
-                    [class.ocupada-zona]="disponiblesEnZona(3) <= 0 && cantidadSeleccionadaZona(3) === 0"
-                    x="150" y="260" width="55" height="170" rx="12"
-                    (click)="seleccionarZona(3)">
+              <rect class="zona" [class.seleccionada-zona]="cantidadSeleccionadaZona(3) > 0"
+                [class.ocupada-zona]="disponiblesEnZona(3) <= 0 && cantidadSeleccionadaZona(3) === 0" x="150" y="260"
+                width="55" height="170" rx="12" (click)="seleccionarZona(3)">
               </rect>
 
-              <rect class="zona"
-                    [class.seleccionada-zona]="cantidadSeleccionadaZona(4) > 0"
-                    [class.ocupada-zona]="disponiblesEnZona(4) <= 0 && cantidadSeleccionadaZona(4) === 0"
-                    x="795" y="260" width="55" height="170" rx="12"
-                    (click)="seleccionarZona(4)">
+              <rect class="zona" [class.seleccionada-zona]="cantidadSeleccionadaZona(4) > 0"
+                [class.ocupada-zona]="disponiblesEnZona(4) <= 0 && cantidadSeleccionadaZona(4) === 0" x="795" y="260"
+                width="55" height="170" rx="12" (click)="seleccionarZona(4)">
               </rect>
 
-              <rect class="zona"
-                    [class.seleccionada-zona]="cantidadSeleccionadaZona(5) > 0"
-                    [class.ocupada-zona]="disponiblesEnZona(5) <= 0 && cantidadSeleccionadaZona(5) === 0"
-                    x="250" y="390" width="500" height="80" rx="16"
-                    (click)="seleccionarZona(5)">
+              <rect class="zona" [class.seleccionada-zona]="cantidadSeleccionadaZona(5) > 0"
+                [class.ocupada-zona]="disponiblesEnZona(5) <= 0 && cantidadSeleccionadaZona(5) === 0" x="250" y="390"
+                width="500" height="80" rx="16" (click)="seleccionarZona(5)">
               </rect>
 
-              <text x="500" y="205" text-anchor="middle" class="texto-zona" [class.texto-seleccionado]="cantidadSeleccionadaZona(1) > 0">DELANTERA</text>
-              <text x="500" y="325" text-anchor="middle" class="texto-zona" [class.texto-seleccionado]="cantidadSeleccionadaZona(2) > 0">GENERAL</text>
-              <text x="177" y="350" text-anchor="middle" transform="rotate(-90 177 350)" class="texto-zona" [class.texto-seleccionado]="cantidadSeleccionadaZona(3) > 0">LATERAL</text>
-              <text x="823" y="350" text-anchor="middle" transform="rotate(90 823 350)" class="texto-zona" [class.texto-seleccionado]="cantidadSeleccionadaZona(4) > 0">LATERAL</text>
-              <text x="500" y="438" text-anchor="middle" class="texto-zona" [class.texto-seleccionado]="cantidadSeleccionadaZona(5) > 0">TRASERA</text>
+              <text x="500" y="205" text-anchor="middle" class="texto-zona"
+                [class.texto-seleccionado]="cantidadSeleccionadaZona(1) > 0">DELANTERA</text>
+              <text x="500" y="325" text-anchor="middle" class="texto-zona"
+                [class.texto-seleccionado]="cantidadSeleccionadaZona(2) > 0">GENERAL</text>
+              <text x="177" y="350" text-anchor="middle" transform="rotate(-90 177 350)" class="texto-zona"
+                [class.texto-seleccionado]="cantidadSeleccionadaZona(3) > 0">LATERAL</text>
+              <text x="823" y="350" text-anchor="middle" transform="rotate(90 823 350)" class="texto-zona"
+                [class.texto-seleccionado]="cantidadSeleccionadaZona(4) > 0">LATERAL</text>
+              <text x="500" y="438" text-anchor="middle" class="texto-zona"
+                [class.texto-seleccionado]="cantidadSeleccionadaZona(5) > 0">TRASERA</text>
 
-              <text x="500" y="225" text-anchor="middle" class="texto-mini" [class.texto-seleccionado]="cantidadSeleccionadaZona(1) > 0">
+              <text x="500" y="225" text-anchor="middle" class="texto-mini"
+                [class.texto-seleccionado]="cantidadSeleccionadaZona(1) > 0">
                 {{ disponiblesEnZona(1) }} disponibles
               </text>
-              <text x="500" y="347" text-anchor="middle" class="texto-mini" [class.texto-seleccionado]="cantidadSeleccionadaZona(2) > 0">
+              <text x="500" y="347" text-anchor="middle" class="texto-mini"
+                [class.texto-seleccionado]="cantidadSeleccionadaZona(2) > 0">
                 {{ disponiblesEnZona(2) }} disponibles
               </text>
-              <text x="500" y="458" text-anchor="middle" class="texto-mini" [class.texto-seleccionado]="cantidadSeleccionadaZona(5) > 0">
+              <text x="500" y="458" text-anchor="middle" class="texto-mini"
+                [class.texto-seleccionado]="cantidadSeleccionadaZona(5) > 0">
                 {{ disponiblesEnZona(5) }} disponibles
               </text>
             </ng-container>
@@ -327,7 +316,8 @@
         <p>Resumen de entradas elegidas</p>
       </div>
 
-      <div class="reserva-bloque" *ngIf="tiempoRestante > 0" style="background-color: #e2f4e2; border-radius: 8px; padding: 10px;">
+      <div class="reserva-bloque" *ngIf="tiempoRestante > 0"
+        style="background-color: #e2f4e2; border-radius: 8px; padding: 10px;">
         <span class="reserva-etiqueta" style="color: #2d5a3d;">Tiempo restante</span>
         <p class="reserva-valor" [style.color]="tiempoRestante <= 60 ? '#842029' : '#2d5a3d'">{{ tiempoFormateado }}</p>
       </div>
@@ -340,20 +330,22 @@
       <!-- SECCIÓN ENTRADAS POR ZONA -->
       <div class="reserva-bloque" *ngIf="infoCompra.modoSeleccion === 'ZONA'">
         <span class="reserva-etiqueta">Entradas por zona</span>
-        
+
         <div class="lista-zonas-seleccion">
           <div class="item-zona-contador" *ngFor="let zona of zonas">
             <div class="zona-info-texto">
               <span class="zona-nombre">Zona {{ zona.zona }}</span>
               <span class="zona-disponibilidad">{{ zona.disponibles }} disponibles</span>
             </div>
-            
+
             <div class="zona-controles">
-              <button class="btn-cantidad" (click)="decrementarEntradasZona(zona.zona)" [disabled]="cantidadSeleccionadaZona(zona.zona) <= 0">
+              <button class="btn-cantidad" (click)="decrementarEntradasZona(zona.zona)"
+                [disabled]="cantidadSeleccionadaZona(zona.zona) <= 0">
                 <i class="fas fa-minus"></i> -
               </button>
               <span class="cantidad-numero">{{ cantidadSeleccionadaZona(zona.zona) }}</span>
-              <button class="btn-cantidad" (click)="incrementarEntradasZona(zona.zona)" [disabled]="zona.disponibles <= 0">
+              <button class="btn-cantidad" (click)="incrementarEntradasZona(zona.zona)"
+                [disabled]="zona.disponibles <= 0">
                 <i class="fas fa-plus"></i> +
               </button>
             </div>

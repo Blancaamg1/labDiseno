@@ -105,20 +105,20 @@ public class ReservasService {
             throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Usuario no identificado");
         }
 
-        Optional<ColaVirtual> colaOpt = this.colaVirtualDao.findByEspectaculo_IdAndIdUsuarioAndEstadoIn(
+        List<ColaVirtual> colas = this.colaVirtualDao.findByEspectaculo_IdAndIdUsuarioAndEstadoIn(
                 espectaculo.getId(),
                 usuario.getId(),
                 Arrays.asList("ACTIVO", "ESPERANDO")
         );
 
-        if (colaOpt.isEmpty()) {
+        if (colas.isEmpty()) {
             throw new ResponseStatusException(
                     HttpStatus.FORBIDDEN,
                     "No estas en la cola virtual de este espectaculo"
             );
         }
 
-        ColaVirtual cola = colaOpt.get();
+        ColaVirtual cola = colas.get(0);
 
         if (!"ACTIVO".equals(cola.getEstado())) {
             throw new ResponseStatusException(

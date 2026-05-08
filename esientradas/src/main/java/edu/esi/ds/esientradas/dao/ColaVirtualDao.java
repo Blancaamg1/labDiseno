@@ -10,7 +10,7 @@ import edu.esi.ds.esientradas.model.ColaVirtual;
 
 public interface ColaVirtualDao extends JpaRepository<ColaVirtual, Long> {
 
-    Optional<ColaVirtual> findByEspectaculo_IdAndIdUsuarioAndEstadoIn(
+    List<ColaVirtual> findByEspectaculo_IdAndIdUsuarioAndEstadoIn(
             Long idEspectaculo,
             Long idUsuario,
             List<String> estados);

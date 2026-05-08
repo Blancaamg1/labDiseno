@@ -18,6 +18,9 @@ public class ComprasService {
     private ReservasService reservasService;
 
     @Autowired
+    private ColaVirtualService colaVirtualService;
+
+    @Autowired
     private PDFService pdfService;
 
     @Transactional
@@ -28,6 +31,14 @@ public class ComprasService {
         // 2. Si el pago fue exitoso y es una confirmación nueva, actualizar el inventario
         if ("PAGADO".equalsIgnoreCase(response.getEstadoPago()) && !response.isYaConfirmado()) {
             reservasService.finalizarVenta(request.getIdsEntradas(), request.getIdEspectaculo());
+            
+            try {
+                if (request.getIdEspectaculo() != null && request.getUserToken() != null) {
+                    colaVirtualService.salirDeCola(request.getIdEspectaculo(), request.getUserToken());
+                }
+            } catch (Exception e) {
+                // Ignorar si el usuario no estaba en la cola o el token es inválido
+            }
         }
 
         // 3. Generar el PDF (Responsabilidad de reportes/documentación)

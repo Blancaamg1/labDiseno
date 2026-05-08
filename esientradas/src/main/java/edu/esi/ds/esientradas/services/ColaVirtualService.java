@@ -25,8 +25,6 @@ public class ColaVirtualService {
 
     private static final long SEGUNDOS_POR_PERSONA = 20L;
     private static final long DURACION_TURNO_ACTIVO = 300L;
-    private static final int MIN_PERSONAS_FAKE = 2;
-    private static final int MAX_PERSONAS_FAKE = 5;
 
     @Autowired
     private ColaVirtualDao colaVirtualDao;
@@ -54,20 +52,15 @@ public class ColaVirtualService {
 
         this.actualizarCola(idEspectaculo);
 
-        Optional<ColaVirtual> existente = this.colaVirtualDao.findByEspectaculo_IdAndIdUsuarioAndEstadoIn(
+        List<ColaVirtual> existentes = this.colaVirtualDao.findByEspectaculo_IdAndIdUsuarioAndEstadoIn(
                 idEspectaculo,
                 usuario.getId(),
                 Arrays.asList("ESPERANDO", "ACTIVO")
         );
 
-        if (existente.isPresent()) {
-            return this.construirDto(existente.get(), idEspectaculo);
+        if (!existentes.isEmpty()) {
+            return this.construirDto(existentes.get(0), idEspectaculo);
         }
-
-        List<ColaVirtual> colaActual = this.colaVirtualDao.findByEspectaculo_IdAndEstadoInOrderByFechaEntradaAsc(
-                idEspectaculo,
-                Arrays.asList("ESPERANDO", "ACTIVO")
-        );
 
         ColaVirtual nueva = new ColaVirtual();
         nueva.setIdEspectaculo(idEspectaculo);
@@ -76,22 +69,16 @@ public class ColaVirtualService {
         nueva.setTokenTurno(UUID.randomUUID().toString());
         nueva.setFechaFinTurno(null);
         nueva.setEstado("ESPERANDO");
-
-        int personasDelante;
-
-        if (colaActual.isEmpty()) {
-            personasDelante = MIN_PERSONAS_FAKE + (int) (Math.random() * (MAX_PERSONAS_FAKE - MIN_PERSONAS_FAKE + 1));
-        } else {
-            ColaVirtual ultimo = colaActual.get(colaActual.size() - 1);
-            int delanteUltimo = ultimo.getPersonasDelante() == null ? 0 : ultimo.getPersonasDelante();
-            personasDelante = delanteUltimo + 1;
-        }
-
-        nueva.setPersonasDelante(personasDelante);
-        nueva.setPosicion(personasDelante + 1);
+        nueva.setPersonasDelante(0);
+        nueva.setPosicion(0);
 
         this.colaVirtualDao.save(nueva);
-        return this.construirDto(nueva, idEspectaculo);
+        
+        // Al entrar, llamamos de nuevo a actualizarCola por si la cola estaba vacía y podemos activarlo.
+        this.actualizarCola(idEspectaculo);
+        
+        ColaVirtual actualizada = this.colaVirtualDao.findById(nueva.getId()).orElse(nueva);
+        return this.construirDto(actualizada, idEspectaculo);
     }
 
     @Transactional
@@ -104,13 +91,13 @@ public class ColaVirtualService {
 
         this.actualizarCola(idEspectaculo);
 
-        Optional<ColaVirtual> colaOpt = this.colaVirtualDao.findByEspectaculo_IdAndIdUsuarioAndEstadoIn(
+        List<ColaVirtual> colas = this.colaVirtualDao.findByEspectaculo_IdAndIdUsuarioAndEstadoIn(
                 idEspectaculo,
                 usuario.getId(),
                 Arrays.asList("ESPERANDO", "ACTIVO")
         );
 
-        if (colaOpt.isEmpty()) {
+        if (colas.isEmpty()) {
             DtoColaEstado dto = new DtoColaEstado();
             dto.setIdEspectaculo(idEspectaculo);
             dto.setIdUsuario(usuario.getId());
@@ -124,36 +111,7 @@ public class ColaVirtualService {
             return dto;
         }
 
-        ColaVirtual cola = colaOpt.get();
-
-        if ("ESPERANDO".equals(cola.getEstado())) {
-            long segundosTranscurridos = Duration.between(cola.getFechaEntrada(), LocalDateTime.now()).getSeconds();
-            long bloquesConsumidos = segundosTranscurridos / SEGUNDOS_POR_PERSONA;
-
-            int personasIniciales = cola.getPersonasDelante() == null ? 0 : cola.getPersonasDelante();
-            int personasRestantes = (int) Math.max(personasIniciales - bloquesConsumidos, 0);
-
-            cola.setPersonasDelante(personasRestantes);
-            cola.setPosicion(personasRestantes + 1);
-
-            if (personasRestantes <= 0) {
-                List<ColaVirtual> activos = this.colaVirtualDao.findByEspectaculo_IdAndEstadoOrderByFechaEntradaAsc(
-                        idEspectaculo,
-                        "ACTIVO"
-                );
-
-                if (activos.isEmpty()) {
-                    cola.setEstado("ACTIVO");
-                    cola.setPosicion(1);
-                    cola.setPersonasDelante(0);
-                    cola.setFechaFinTurno(LocalDateTime.now().plusSeconds(DURACION_TURNO_ACTIVO));
-                }
-            }
-
-            this.colaVirtualDao.save(cola);
-        }
-
-        return this.construirDto(cola, idEspectaculo);
+        return this.construirDto(colas.get(0), idEspectaculo);
     }
 
     @Transactional
@@ -164,14 +122,13 @@ public class ColaVirtualService {
             throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Usuario no identificado");
         }
 
-        Optional<ColaVirtual> colaOpt = this.colaVirtualDao.findByEspectaculo_IdAndIdUsuarioAndEstadoIn(
+        List<ColaVirtual> colas = this.colaVirtualDao.findByEspectaculo_IdAndIdUsuarioAndEstadoIn(
                 idEspectaculo,
                 usuario.getId(),
                 Arrays.asList("ESPERANDO", "ACTIVO")
         );
 
-        if (colaOpt.isPresent()) {
-            ColaVirtual cola = colaOpt.get();
+        for (ColaVirtual cola : colas) {
             cola.setEstado("FINALIZADO");
             cola.setFechaFinTurno(null);
             this.colaVirtualDao.save(cola);
@@ -180,12 +137,13 @@ public class ColaVirtualService {
         this.actualizarCola(idEspectaculo);
     }
 
-    private void actualizarCola(Long idEspectaculo) {
+    private synchronized void actualizarCola(Long idEspectaculo) {
         List<ColaVirtual> activos = this.colaVirtualDao.findByEspectaculo_IdAndEstadoOrderByFechaEntradaAsc(
                 idEspectaculo,
                 "ACTIVO"
         );
 
+        // Expirar activos si su turno ha terminado
         for (ColaVirtual activo : activos) {
             if (activo.getFechaFinTurno() != null && activo.getFechaFinTurno().isBefore(LocalDateTime.now())) {
                 activo.setEstado("FINALIZADO");
@@ -199,6 +157,7 @@ public class ColaVirtualService {
                 "ACTIVO"
         );
 
+        // Si sigue habiendo alguien activo, no activamos a nadie más. (Cola estricta 1-a-1)
         if (!activosDespues.isEmpty()) {
             return;
         }
@@ -208,26 +167,20 @@ public class ColaVirtualService {
                 "ESPERANDO"
         );
 
-        for (ColaVirtual cola : esperando) {
-            long segundosTranscurridos = Duration.between(cola.getFechaEntrada(), LocalDateTime.now()).getSeconds();
-            long bloquesConsumidos = segundosTranscurridos / SEGUNDOS_POR_PERSONA;
+        if (esperando.isEmpty()) {
+            return;
+        }
 
-            int personasIniciales = cola.getPersonasDelante() == null ? 0 : cola.getPersonasDelante();
-            int personasRestantes = (int) Math.max(personasIniciales - bloquesConsumidos, 0);
+        // Si no hay nadie activo, verificamos si el primero que espera ya pasó el "tiempo de persona falsa"
+        ColaVirtual primero = esperando.get(0);
+        long segundosEsperados = Duration.between(primero.getFechaEntrada(), LocalDateTime.now()).getSeconds();
 
-            cola.setPersonasDelante(personasRestantes);
-            cola.setPosicion(personasRestantes + 1);
-
-            if (personasRestantes <= 0) {
-                cola.setEstado("ACTIVO");
-                cola.setPosicion(1);
-                cola.setPersonasDelante(0);
-                cola.setFechaFinTurno(LocalDateTime.now().plusSeconds(DURACION_TURNO_ACTIVO));
-                this.colaVirtualDao.save(cola);
-                return;
-            }
-
-            this.colaVirtualDao.save(cola);
+        if (segundosEsperados >= SEGUNDOS_POR_PERSONA) {
+            primero.setEstado("ACTIVO");
+            primero.setPosicion(1);
+            primero.setPersonasDelante(0);
+            primero.setFechaFinTurno(LocalDateTime.now().plusSeconds(DURACION_TURNO_ACTIVO));
+            this.colaVirtualDao.save(primero);
         }
     }
 
@@ -235,8 +188,6 @@ public class ColaVirtualService {
         DtoColaEstado dto = new DtoColaEstado();
         dto.setIdEspectaculo(idEspectaculo);
         dto.setIdUsuario(cola.getIdUsuario());
-        dto.setPosicion(cola.getPosicion());
-        dto.setPersonasDelante(cola.getPersonasDelante());
         dto.setEstado(cola.getEstado());
         dto.setTokenTurno(cola.getTokenTurno());
 
@@ -250,9 +201,48 @@ public class ColaVirtualService {
             long segundos = Duration.between(LocalDateTime.now(), cola.getFechaFinTurno()).getSeconds();
             dto.setSegundosRestantes(Math.max(segundos, 0));
             dto.setMensaje(puedeComprar ? "Ya puedes comprar entradas" : "Tu turno ha caducado");
+            dto.setPosicion(1);
+            dto.setPersonasDelante(0);
         } else if ("ESPERANDO".equals(cola.getEstado())) {
-            long segundos = ((cola.getPersonasDelante() == null ? 0 : cola.getPersonasDelante()) + 1) * SEGUNDOS_POR_PERSONA;
-            dto.setSegundosRestantes(segundos);
+            List<ColaVirtual> activos = this.colaVirtualDao.findByEspectaculo_IdAndEstadoOrderByFechaEntradaAsc(
+                    idEspectaculo, "ACTIVO");
+            List<ColaVirtual> esperando = this.colaVirtualDao.findByEspectaculo_IdAndEstadoOrderByFechaEntradaAsc(
+                    idEspectaculo, "ESPERANDO");
+
+            int activosCount = activos.isEmpty() ? 0 : 1;
+            
+            // Verificamos si existe la persona falsa conceptual
+            boolean hayPersonaFalsa = false;
+            if (activosCount == 0 && !esperando.isEmpty()) {
+                ColaVirtual primero = esperando.get(0);
+                long segs = Duration.between(primero.getFechaEntrada(), LocalDateTime.now()).getSeconds();
+                if (segs < SEGUNDOS_POR_PERSONA) {
+                    hayPersonaFalsa = true;
+                }
+            }
+
+            int countEsperandoAntesQueYo = 0;
+            for (ColaVirtual esp : esperando) {
+                if (esp.getId().equals(cola.getId())) {
+                    break;
+                }
+                countEsperandoAntesQueYo++;
+            }
+
+            int personasDelante = activosCount + countEsperandoAntesQueYo + (hayPersonaFalsa ? 1 : 0);
+            
+            dto.setPosicion(personasDelante + 1);
+            dto.setPersonasDelante(personasDelante);
+            
+            // Segundos restantes aproximados (cada persona = 20s)
+            long segundosAproximados = personasDelante * SEGUNDOS_POR_PERSONA;
+            if (hayPersonaFalsa && activosCount == 0 && countEsperandoAntesQueYo == 0) {
+                 // Si soy el primero y estoy esperando a la persona falsa, cuento los segundos que faltan
+                 long segs = Duration.between(cola.getFechaEntrada(), LocalDateTime.now()).getSeconds();
+                 segundosAproximados = Math.max(SEGUNDOS_POR_PERSONA - segs, 0);
+            }
+            
+            dto.setSegundosRestantes(segundosAproximados);
             dto.setMensaje("Debes esperar tu turno");
         } else {
             dto.setSegundosRestantes(0L);
