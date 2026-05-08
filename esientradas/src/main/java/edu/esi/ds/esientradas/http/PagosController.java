@@ -44,6 +44,11 @@ public class PagosController {
         }
     }
 
+    @PostMapping("/confirmar")
+    public edu.esi.ds.esientradas.dto.DtoConfirmarPagoResponse confirmarPago(@RequestBody edu.esi.ds.esientradas.dto.DtoConfirmarPagoRequest request) {
+        return this.service.confirmarPago(request);
+    }
+
 
     @GetMapping("/{idPago}/pdf")
     public ResponseEntity<byte[]> descargarPdf(@PathVariable Long idPago) {

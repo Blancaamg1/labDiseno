@@ -9,10 +9,6 @@ export interface EntradaMapaDto {
   zona?: number;
 }
 
-export interface ButacaSvg extends EntradaMapaDto {
-  x: number;
-  y: number;
-}
 
 export interface ZonaResumen {
   zona: number;

@@ -29,6 +29,15 @@ public class PagosService {
     @Autowired
     private UsuarioService usuarioService;
 
+    @Autowired
+    private ReservasService reservasService;
+
+    @Autowired
+    private ColaVirtualService colaVirtualService;
+
+    @Autowired
+    private PDFService pdfService;
+
     private static final String FALLBACK_STRIPE_SECRET_KEY = "";
 
     @Autowired
@@ -135,13 +144,35 @@ public class PagosService {
                 pago = this.pagoDao.save(pago);
             }
 
+            if (!yaConfirmado) {
+                reservasService.finalizarVenta(request.getIdsEntradas(), request.getIdEspectaculo());
+
+                try {
+                    if (request.getIdEspectaculo() != null && request.getTokenTurno() != null) {
+                        colaVirtualService.salirDeCola(request.getIdEspectaculo(), request.getTokenTurno());
+                    }
+                } catch (Exception e) {
+                    // Ignorar si el usuario no estaba en la cola o el token es inválido
+                }
+            }
+
+            boolean pdfGenerado = false;
+            if (pago != null && pago.getId() != null) {
+                try {
+                    pdfService.generarEntradaPDF(pago);
+                    pdfGenerado = true;
+                } catch (Exception e) {
+                    pdfGenerado = false;
+                }
+            }
+
             DtoConfirmarPagoResponse response = new DtoConfirmarPagoResponse();
             response.setPagoId(pago.getId());
             response.setPaymentIntentId(intent.getId());
             response.setEstadoStripe(stripeStatus);
             response.setEstadoPago(pago.getEstado());
             response.setYaConfirmado(yaConfirmado);
-            response.setPdfGenerado(false); // Gestionado por ComprasService
+            response.setPdfGenerado(pdfGenerado);
             response.setMensaje(yaConfirmado
                     ? "Pago ya confirmado previamente"
                     : "Pago confirmado correctamente");

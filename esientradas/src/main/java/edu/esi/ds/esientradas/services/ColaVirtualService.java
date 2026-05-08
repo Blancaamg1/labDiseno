@@ -36,7 +36,7 @@ public class ColaVirtualService {
     private UsuarioService usuarioService;
 
     @Transactional
-    public DtoColaEstado entrarEnCola(Long idEspectaculo, String userToken) {
+    public DtoColaEstado entrarEnCola(Long idEspectaculo) {
         Espectaculo espectaculo = this.espectaculoDao.findById(idEspectaculo)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Espectáculo no encontrado"));
 
@@ -44,27 +44,11 @@ public class ColaVirtualService {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Este espectáculo no usa cola virtual");
         }
 
-        DtoUsuarioInfo usuario = this.usuarioService.getUserInfo(userToken);
-
-        if (usuario == null || usuario.getId() == null) {
-            throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Usuario no identificado");
-        }
-
         this.actualizarCola(idEspectaculo);
-
-        List<ColaVirtual> existentes = this.colaVirtualDao.findByEspectaculo_IdAndIdUsuarioAndEstadoIn(
-                idEspectaculo,
-                usuario.getId(),
-                Arrays.asList("ESPERANDO", "ACTIVO")
-        );
-
-        if (!existentes.isEmpty()) {
-            return this.construirDto(existentes.get(0), idEspectaculo);
-        }
 
         ColaVirtual nueva = new ColaVirtual();
         nueva.setIdEspectaculo(idEspectaculo);
-        nueva.setIdUsuario(usuario.getId());
+        nueva.setIdUsuario(null);
         nueva.setFechaEntrada(LocalDateTime.now());
         nueva.setTokenTurno(UUID.randomUUID().toString());
         nueva.setFechaFinTurno(null);
@@ -82,25 +66,15 @@ public class ColaVirtualService {
     }
 
     @Transactional
-    public DtoColaEstado consultarEstado(Long idEspectaculo, String userToken) {
-        DtoUsuarioInfo usuario = this.usuarioService.getUserInfo(userToken);
-
-        if (usuario == null || usuario.getId() == null) {
-            throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Usuario no identificado");
-        }
-
+    public DtoColaEstado consultarEstado(Long idEspectaculo, String tokenTurno) {
         this.actualizarCola(idEspectaculo);
 
-        List<ColaVirtual> colas = this.colaVirtualDao.findByEspectaculo_IdAndIdUsuarioAndEstadoIn(
-                idEspectaculo,
-                usuario.getId(),
-                Arrays.asList("ESPERANDO", "ACTIVO")
-        );
+        Optional<ColaVirtual> colaOpt = this.colaVirtualDao.findByTokenTurno(tokenTurno);
 
-        if (colas.isEmpty()) {
+        if (!colaOpt.isPresent() || !Arrays.asList("ESPERANDO", "ACTIVO").contains(colaOpt.get().getEstado()) || !colaOpt.get().getIdEspectaculo().equals(idEspectaculo)) {
             DtoColaEstado dto = new DtoColaEstado();
             dto.setIdEspectaculo(idEspectaculo);
-            dto.setIdUsuario(usuario.getId());
+            dto.setIdUsuario(null);
             dto.setEstado("SIN_COLA");
             dto.setPosicion(null);
             dto.setPersonasDelante(null);
@@ -111,24 +85,14 @@ public class ColaVirtualService {
             return dto;
         }
 
-        return this.construirDto(colas.get(0), idEspectaculo);
+        return this.construirDto(colaOpt.get(), idEspectaculo);
     }
 
     @Transactional
-    public void salirDeCola(Long idEspectaculo, String userToken) {
-        DtoUsuarioInfo usuario = this.usuarioService.getUserInfo(userToken);
-
-        if (usuario == null || usuario.getId() == null) {
-            throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Usuario no identificado");
-        }
-
-        List<ColaVirtual> colas = this.colaVirtualDao.findByEspectaculo_IdAndIdUsuarioAndEstadoIn(
-                idEspectaculo,
-                usuario.getId(),
-                Arrays.asList("ESPERANDO", "ACTIVO")
-        );
-
-        for (ColaVirtual cola : colas) {
+    public void salirDeCola(Long idEspectaculo, String tokenTurno) {
+        Optional<ColaVirtual> colaOpt = this.colaVirtualDao.findByTokenTurno(tokenTurno);
+        if (colaOpt.isPresent() && Arrays.asList("ESPERANDO", "ACTIVO").contains(colaOpt.get().getEstado()) && colaOpt.get().getIdEspectaculo().equals(idEspectaculo)) {
+            ColaVirtual cola = colaOpt.get();
             cola.setEstado("FINALIZADO");
             cola.setFechaFinTurno(null);
             this.colaVirtualDao.save(cola);

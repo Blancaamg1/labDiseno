@@ -15,20 +15,19 @@ public class ColaVirtualController {
     private ColaVirtualService colaVirtualService;
 
     @PostMapping("/entrar")
-    public DtoColaEstado entrarEnCola(@RequestParam Long idEspectaculo,
-                                      @RequestParam String userToken) {
-        return this.colaVirtualService.entrarEnCola(idEspectaculo, userToken);
+    public DtoColaEstado entrarEnCola(@RequestParam Long idEspectaculo) {
+        return this.colaVirtualService.entrarEnCola(idEspectaculo);
     }
 
     @GetMapping("/estado")
     public DtoColaEstado consultarEstado(@RequestParam Long idEspectaculo,
-                                         @RequestParam String userToken) {
-        return this.colaVirtualService.consultarEstado(idEspectaculo, userToken);
+                                         @RequestParam String tokenTurno) {
+        return this.colaVirtualService.consultarEstado(idEspectaculo, tokenTurno);
     }
 
     @PostMapping("/salir")
     public void salirDeCola(@RequestParam Long idEspectaculo,
-                            @RequestParam String userToken) {
-        this.colaVirtualService.salirDeCola(idEspectaculo, userToken);
+                            @RequestParam String tokenTurno) {
+        this.colaVirtualService.salirDeCola(idEspectaculo, tokenTurno);
     }
 }

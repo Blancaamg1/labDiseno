@@ -32,7 +32,7 @@ export class CompraComponent implements OnInit, AfterViewInit, OnDestroy {
   private readonly ngZone = inject(NgZone);
   private readonly isBrowser = isPlatformBrowser(this.platformId);
   private readonly route = inject(ActivatedRoute, { optional: true });
-  private readonly publishableKey = 'pk_test_51T92jkQdO08Nbk2EpzE4U8yNig7EO2Q6etoAl3aWG2NcKeKX0WQL3X7hmjceOzXyfwUz07Enui94aHT2h159EdA3002ovxoko0';
+  private readonly publishableKey = 'pk_test_51T92klDfoOsvKeXTdBJDJbXzaRbwz4oNNQF7pNsQbFjV0KLwxVwQvlCHIzXpcY4DEvYozxrSGxup0YGuaQyLYjWl00EHouwGZN';
 
   private stripe: any;
   private elements: any;
@@ -61,10 +61,13 @@ export class CompraComponent implements OnInit, AfterViewInit, OnDestroy {
     private storageService: ElegirEntradasStorageService
   ) { }
 
+  tokenTurno?: string;
+
   ngOnInit(): void {
     this.route?.queryParamMap.subscribe((params) => {
       this.setIdEspectaculo(params.get('idEspectaculo'));
       this.setIdsEntradas(params.get('idsEntradas'));
+      this.tokenTurno = params.get('tokenTurno') || undefined;
       this.cargarEntradasDesdeBackend();
     });
 
@@ -72,6 +75,7 @@ export class CompraComponent implements OnInit, AfterViewInit, OnDestroy {
       const search = new URLSearchParams(window.location.search);
       this.setIdEspectaculo(search.get('idEspectaculo'));
       this.setIdsEntradas(search.get('idsEntradas'));
+      this.tokenTurno = search.get('tokenTurno') || undefined;
       this.cargarEntradasDesdeBackend();
     }
 
@@ -253,6 +257,7 @@ export class CompraComponent implements OnInit, AfterViewInit, OnDestroy {
           paymentIntentId: response.paymentIntent.id,
           clientSecret: this.clientSecret,
           userToken: this.storageService.getAuthToken(),
+          tokenTurno: this.tokenTurno,
           idEspectaculo: this.idEspectaculo,
           cantidadEntradas: this.idsEntradasSeleccionadas.length,
           idsEntradas: this.idsEntradasSeleccionadas

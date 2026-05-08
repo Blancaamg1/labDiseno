@@ -13,6 +13,16 @@ public class DtoConfirmarPagoRequest {
     private String emailComprador;
     private List<Long> idsEntradas;
 
+    private String tokenTurno;
+
+    public String getTokenTurno() {
+        return tokenTurno;
+    }
+
+    public void setTokenTurno(String tokenTurno) {
+        this.tokenTurno = tokenTurno;
+    }
+
     public String getUserToken() {
         return userToken;
     }

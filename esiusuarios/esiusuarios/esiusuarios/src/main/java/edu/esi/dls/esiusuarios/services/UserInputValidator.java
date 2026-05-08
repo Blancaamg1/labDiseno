@@ -93,6 +93,7 @@ public class UserInputValidator {
         boolean hasUpper = false;
         boolean hasLower = false;
         boolean hasDigit = false;
+        boolean hasSpecial = false;
 
         for (char c : password.toCharArray()) {
             if (Character.isUpperCase(c)) {
@@ -101,9 +102,11 @@ public class UserInputValidator {
                 hasLower = true;
             } else if (Character.isDigit(c)) {
                 hasDigit = true;
+            } else if (!Character.isWhitespace(c)) {
+                hasSpecial = true;
             }
         }
 
-        return hasUpper && hasLower && hasDigit;
+        return hasUpper && hasLower && hasDigit && hasSpecial;
     }
 }

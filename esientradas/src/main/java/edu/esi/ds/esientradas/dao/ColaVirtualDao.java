@@ -23,6 +23,8 @@ public interface ColaVirtualDao extends JpaRepository<ColaVirtual, Long> {
             Long idEspectaculo,
             String estado);
 
+    Optional<ColaVirtual> findByTokenTurno(String tokenTurno);
+
     List<ColaVirtual> findByEstadoAndFechaFinTurnoBefore(
             String estado,
             LocalDateTime fecha);

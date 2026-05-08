@@ -47,8 +47,9 @@ export class RestablecerContrasena {
     const hasUpper = /[A-Z]/.test(this.pwd1);
     const hasLower = /[a-z]/.test(this.pwd1);
     const hasDigit = /[0-9]/.test(this.pwd1);
+    const hasSpecial = /[^A-Za-z0-9\s]/.test(this.pwd1);
 
-    return hasUpper && hasLower && hasDigit;
+    return hasUpper && hasLower && hasDigit && hasSpecial;
   }
 
   async guardarNuevaContrasena() {
@@ -72,7 +73,7 @@ export class RestablecerContrasena {
     }
 
     if (!this.isPasswordValid()) {
-      this.error = 'La contrasena debe tener al menos 8 caracteres, mayuscula, minuscula y numero.';
+      this.error = 'La contrasena debe tener al menos 8 caracteres, mayuscula, minuscula, numero y caracter especial.';
       this.cdr.detectChanges();
       return;
     }

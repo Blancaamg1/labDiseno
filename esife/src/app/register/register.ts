@@ -30,6 +30,7 @@ export class Register {
   hasUpperCase = false;
   hasLowerCase = false;
   hasDigit = false;
+  hasSpecial = false;
 
   passwordErrors: string[] = [];
 
@@ -53,16 +54,18 @@ export class Register {
     this.hasUpperCase = /[A-Z]/.test(pwd);
     this.hasLowerCase = /[a-z]/.test(pwd);
     this.hasDigit = /[0-9]/.test(pwd);
+    this.hasSpecial = /[^A-Za-z0-9\s]/.test(pwd);
 
     this.passwordErrors = [];
     if (!this.hasMinLength) this.passwordErrors.push('Mínimo 8 caracteres');
     if (!this.hasUpperCase) this.passwordErrors.push('Al menos 1 mayúscula');
     if (!this.hasLowerCase) this.passwordErrors.push('Al menos 1 minúscula');
     if (!this.hasDigit) this.passwordErrors.push('Al menos 1 número');
+    if (!this.hasSpecial) this.passwordErrors.push('Al menos 1 carácter especial');
   }
 
   isPasswordValid(): boolean {
-    return this.hasMinLength && this.hasUpperCase && this.hasLowerCase && this.hasDigit;
+    return this.hasMinLength && this.hasUpperCase && this.hasLowerCase && this.hasDigit && this.hasSpecial;
   }
 
   passwordsMatch(): boolean {

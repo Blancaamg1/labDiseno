@@ -13,7 +13,7 @@ export class Pagos {
     }
 
     confirmarCompra(info: any) {
-      return this.http.post('http://localhost:8080/compras/confirmar', info);
+      return this.http.post('http://localhost:8080/pagos/confirmar', info);
     }
 
 }

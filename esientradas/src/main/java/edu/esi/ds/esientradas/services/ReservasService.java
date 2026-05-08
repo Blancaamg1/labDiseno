@@ -48,7 +48,7 @@ public class ReservasService {
     private UsuarioService usuarioService;
 
     @Transactional
-    public Long reservar(Long idEntrada, String sessionId, String userToken) {
+    public Long reservar(Long idEntrada, String sessionId, String tokenTurno) {
         if (this.tokenDao.countBySessionId(sessionId) >= 12) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "No se permite reservar más de 12 entradas simultáneamente.");
         }
@@ -56,7 +56,7 @@ public class ReservasService {
         Entrada entrada = this.entradaDao.findById(idEntrada)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Entrada no encontrada"));
 
-        this.validarAccesoPorCola(entrada, userToken);
+        this.validarAccesoPorCola(entrada, tokenTurno);
 
         if (entrada.getEstado() != Estado.DISPONIBLE) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Entrada no disponible");
@@ -72,7 +72,7 @@ public class ReservasService {
     }
 
     @Transactional
-    public void liberar(Long idEntrada, String userToken) {
+    public void liberar(Long idEntrada, String tokenTurno) {
         Entrada entrada = this.entradaDao.findById(idEntrada).orElse(null);
         if (entrada != null && entrada.getEstado() == Estado.RESERVADA) {
             entrada.setEstado(Estado.DISPONIBLE);
@@ -84,41 +84,23 @@ public class ReservasService {
         }
     }
 
-    private void validarAccesoPorCola(Entrada entrada, String userToken) {
+    private void validarAccesoPorCola(Entrada entrada, String tokenTurno) {
         Espectaculo espectaculo = entrada.getEspectaculo();
 
-        if (espectaculo == null) {
+        if (espectaculo == null || espectaculo.getUsaColaVirtual() == null || !espectaculo.getUsaColaVirtual()) {
             return;
         }
 
-        if (espectaculo.getUsaColaVirtual() == null || !espectaculo.getUsaColaVirtual()) {
-            return;
+        if (tokenTurno == null || tokenTurno.isBlank()) {
+            throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Se requiere token de turno para reservar");
         }
 
-        if (userToken == null || userToken.isBlank()) {
-            throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Se requiere token de usuario");
+        ColaVirtual cola = this.colaVirtualDao.findByTokenTurno(tokenTurno)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.FORBIDDEN, "No estas en la cola virtual de este espectaculo"));
+
+        if (!espectaculo.getId().equals(cola.getIdEspectaculo())) {
+            throw new ResponseStatusException(HttpStatus.FORBIDDEN, "No estas en la cola virtual de este espectaculo");
         }
-
-        DtoUsuarioInfo usuario = this.usuarioService.getUserInfo(userToken);
-
-        if (usuario == null || usuario.getId() == null) {
-            throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Usuario no identificado");
-        }
-
-        List<ColaVirtual> colas = this.colaVirtualDao.findByEspectaculo_IdAndIdUsuarioAndEstadoIn(
-                espectaculo.getId(),
-                usuario.getId(),
-                Arrays.asList("ACTIVO", "ESPERANDO")
-        );
-
-        if (colas.isEmpty()) {
-            throw new ResponseStatusException(
-                    HttpStatus.FORBIDDEN,
-                    "No estas en la cola virtual de este espectaculo"
-            );
-        }
-
-        ColaVirtual cola = colas.get(0);
 
         if (!"ACTIVO".equals(cola.getEstado())) {
             throw new ResponseStatusException(

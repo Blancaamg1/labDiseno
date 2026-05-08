@@ -37,29 +37,29 @@ export class EspectaculosService {
     );
   }
 
-  entrarEnCola(idEspectaculo: number, userToken: string) {
+  entrarEnCola(idEspectaculo: number) {
     return this.http.post<ColaEstadoDto>(
-      `http://localhost:8080/cola/entrar?idEspectaculo=${idEspectaculo}&userToken=${userToken}`,
+      `http://localhost:8080/cola/entrar?idEspectaculo=${idEspectaculo}`,
       {}
     );
   }
 
-  obtenerEstadoCola(idEspectaculo: number, userToken: string) {
+  obtenerEstadoCola(idEspectaculo: number, tokenTurno: string) {
     return this.http.get<ColaEstadoDto>(
-      `http://localhost:8080/cola/estado?idEspectaculo=${idEspectaculo}&userToken=${userToken}`
+      `http://localhost:8080/cola/estado?idEspectaculo=${idEspectaculo}&tokenTurno=${tokenTurno}`
     );
   }
 
-  reservar(idEntrada: number, userToken: string) {
+  reservar(idEntrada: number, tokenTurno: string) {
     return this.http.put(
-      `http://localhost:8080/reservas/reservar?idEntrada=${idEntrada}&userToken=${userToken}`, 
+      `http://localhost:8080/reservas/reservar?idEntrada=${idEntrada}&tokenTurno=${tokenTurno}`, 
       {}
     );
   }
 
-  liberar(idEntrada: number, userToken: string) {
+  liberar(idEntrada: number, tokenTurno: string) {
     return this.http.put(
-      `http://localhost:8080/reservas/liberar?idEntrada=${idEntrada}&userToken=${userToken}`, 
+      `http://localhost:8080/reservas/liberar?idEntrada=${idEntrada}&tokenTurno=${tokenTurno}`, 
       {}
     );
   }

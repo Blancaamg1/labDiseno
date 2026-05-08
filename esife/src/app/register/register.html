@@ -71,6 +71,10 @@
 					<span class="check">{{ hasDigit ? '✓' : '✕' }}</span>
 					<span class="text">1 número (0-9)</span>
 				</div>
+				<div class="requirement" [class.met]="hasSpecial">
+					<span class="check">{{ hasSpecial ? '✓' : '✕' }}</span>
+					<span class="text">1 carácter especial (@, #, $, ...)</span>
+				</div>
 			</div>
 		</div>
 

@@ -7,7 +7,7 @@ import { CommonModule } from '@angular/common';
 import { ElegirEntradasStorageService } from './elegir-entradas-storage.service';
 import { ElegirEntradasMapService } from './elegir-entradas-map.service';
 import { FormsModule } from '@angular/forms';
-import { ButacaSvg, ColaEstadoDto, EntradaMapaDto, ZonaResumen } from './elegir-entradas.model';
+import { ColaEstadoDto, EntradaMapaDto, ZonaResumen } from './elegir-entradas.model';
 
 @Component({
   selector: 'app-elegir-entradas',
@@ -22,7 +22,7 @@ export class ElegirEntradas implements OnInit, OnDestroy {
   entradasMapa: EntradaMapaDto[] = [];
   idEspectaculoActual: number | null = null;
 
-  butacas: ButacaSvg[] = [];
+
   zonas: ZonaResumen[] = [];
 
   idsEntradasSeleccionadas = new Set<number>();
@@ -70,7 +70,7 @@ export class ElegirEntradas implements OnInit, OnDestroy {
           this.cargarDatos(this.idEspectaculoActual);
         }
       });
-    
+
     this.verificarContadorExistente();
   }
 
@@ -131,32 +131,32 @@ export class ElegirEntradas implements OnInit, OnDestroy {
           this.intervalId = null;
           this.limpiarEstadoSeleccion();
 
-          const userToken = this.storageService.getAuthToken();
-          
+          const tokenTurno = this.estadoCola?.tokenTurno || '';
+
           const peticionesLiberar: Observable<any>[] = [];
           this.idsEntradasSeleccionadas.forEach(id => {
-             peticionesLiberar.push(this.reservasService.liberar(id, userToken));
+            peticionesLiberar.push(this.reservasService.liberar(id, tokenTurno));
           });
 
           this.idsEntradasSeleccionadas.clear();
 
           if (peticionesLiberar.length > 0) {
-             forkJoin(peticionesLiberar).subscribe({
-               complete: () => {
-                 if (this.infoCompra?.idEspectaculo) {
-                    this.cargarDatos(this.infoCompra.idEspectaculo);
-                 }
-               },
-               error: () => {
-                 if (this.infoCompra?.idEspectaculo) {
-                    this.cargarDatos(this.infoCompra.idEspectaculo);
-                 }
-               }
-             });
+            forkJoin(peticionesLiberar).subscribe({
+              complete: () => {
+                if (this.infoCompra?.idEspectaculo) {
+                  this.cargarDatos(this.infoCompra.idEspectaculo);
+                }
+              },
+              error: () => {
+                if (this.infoCompra?.idEspectaculo) {
+                  this.cargarDatos(this.infoCompra.idEspectaculo);
+                }
+              }
+            });
           } else {
-             if (this.infoCompra?.idEspectaculo) {
-                this.cargarDatos(this.infoCompra.idEspectaculo);
-             }
+            if (this.infoCompra?.idEspectaculo) {
+              this.cargarDatos(this.infoCompra.idEspectaculo);
+            }
           }
 
           this.cdr.detectChanges();
@@ -190,39 +190,32 @@ export class ElegirEntradas implements OnInit, OnDestroy {
       info: this.reservasService.getInfoCompra(idEspectaculo),
       entradas: this.reservasService.obtenerEntradasMapa(idEspectaculo)
     })
-    .pipe(takeUntilDestroyed(this.destroyRef))
-    .subscribe({
-      next: ({ info, entradas }) => {
-        this.infoCompra = this.mapService.resolveVisualMode(info, entradas ?? []);
-        this.entradasMapa = this.mapService.filterEntradasReales(this.infoCompra, entradas ?? []);
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe({
+        next: ({ info, entradas }) => {
+          this.infoCompra = this.mapService.resolveVisualMode(info, entradas ?? []);
+          this.entradasMapa = this.mapService.filterEntradasReales(this.infoCompra, entradas ?? []);
 
-        this.usaColaVirtual = this.infoCompra?.usaColaVirtual === true;
-        this.puedeComprar = !this.usaColaVirtual;
-        this.estaEnCola = false;
-        this.estadoCola = null;
+          this.usaColaVirtual = this.infoCompra?.usaColaVirtual === true;
+          this.puedeComprar = !this.usaColaVirtual;
+          this.estaEnCola = false;
+          this.estadoCola = null;
 
-        if (!this.usaColaVirtual) {
-          this.actualizarVisualizacion();
-          this.inicializarFormularioPrecisa();
+          if (!this.usaColaVirtual) {
+            this.actualizarVisualizacion();
+            this.inicializarFormularioPrecisa();
+          }
+
+          this.cdr.detectChanges();
+        },
+        error: (err) => {
+          console.error('Error al obtener datos de compra', err);
         }
-
-        this.cdr.detectChanges();
-      },
-      error: (err) => {
-        console.error('Error al obtener datos de compra', err);
-      }
-    });
+      });
   }
 
   entrarEnCola(idEspectaculo: number): void {
-    const userToken = this.storageService.getAuthToken();
-
-    if (!userToken) {
-      alert('No se ha encontrado el token del usuario.');
-      return;
-    }
-
-    this.reservasService.entrarEnCola(idEspectaculo, userToken).subscribe({
+    this.reservasService.entrarEnCola(idEspectaculo).subscribe({
       next: (respuesta: ColaEstadoDto) => {
         this.estaEnCola = true;
         this.estadoCola = respuesta;
@@ -235,7 +228,7 @@ export class ElegirEntradas implements OnInit, OnDestroy {
           this.puedeComprar = false;
         }
 
-        this.iniciarPollingCola(idEspectaculo, userToken);
+        this.iniciarPollingCola(idEspectaculo, respuesta.tokenTurno);
         this.cdr.detectChanges();
       },
       error: (err) => {
@@ -245,13 +238,13 @@ export class ElegirEntradas implements OnInit, OnDestroy {
     });
   }
 
-  iniciarPollingCola(idEspectaculo: number, userToken: string): void {
+  iniciarPollingCola(idEspectaculo: number, tokenTurno: string): void {
     if (this.pollingCola) {
       clearInterval(this.pollingCola);
     }
 
     this.pollingCola = setInterval(() => {
-      this.reservasService.obtenerEstadoCola(idEspectaculo, userToken).subscribe({
+      this.reservasService.obtenerEstadoCola(idEspectaculo, tokenTurno).subscribe({
         next: (estado: ColaEstadoDto) => {
           this.estadoCola = estado;
           this.estaEnCola = true;
@@ -278,39 +271,9 @@ export class ElegirEntradas implements OnInit, OnDestroy {
 
   private actualizarVisualizacion(): void {
     const visual = this.mapService.buildVisualState(this.infoCompra, this.entradasMapa);
-    this.butacas = visual.butacas;
     this.zonas = visual.zonas;
   }
 
-  toggleButaca(butaca: ButacaSvg): void {
-    if ((!butaca.disponible && !this.idsEntradasSeleccionadas.has(butaca.idEntrada)) || (this.usaColaVirtual && !this.puedeComprar)) {
-      return;
-    }
-
-    const userToken = this.storageService.getAuthToken();
-
-    if (this.idsEntradasSeleccionadas.has(butaca.idEntrada)) {
-      this.reservasService.liberar(butaca.idEntrada, userToken).subscribe(() => {
-        this.idsEntradasSeleccionadas.delete(butaca.idEntrada);
-        if (this.idsEntradasSeleccionadas.size === 0) {
-           this.limpiarEstadoSeleccion();
-        } else {
-           this.guardarEstadoSeleccion();
-        }
-        this.cdr.detectChanges();
-      });
-    } else {
-      this.reservasService.reservar(butaca.idEntrada, userToken).subscribe(() => {
-        this.idsEntradasSeleccionadas.add(butaca.idEntrada);
-        this.registrarReservaLocal();
-        this.guardarEstadoSeleccion();
-        this.cdr.detectChanges();
-      }, err => {
-        alert('Esta entrada ya no está disponible.');
-        this.cargarDatos(this.infoCompra?.idEspectaculo);
-      });
-    }
-  }
 
   estaSeleccionada(idEntrada: number): boolean {
     return this.idsEntradasSeleccionadas.has(idEntrada);
@@ -343,9 +306,9 @@ export class ElegirEntradas implements OnInit, OnDestroy {
     }
 
     const idEntrada = entradasDisponibles[0].idEntrada;
-    const userToken = this.storageService.getAuthToken();
+    const tokenTurno = this.estadoCola?.tokenTurno || '';
 
-    this.reservasService.reservar(idEntrada, userToken).subscribe(() => {
+    this.reservasService.reservar(idEntrada, tokenTurno).subscribe(() => {
       this.idsEntradasSeleccionadas.add(idEntrada);
       this.registrarReservaLocal();
       this.guardarEstadoSeleccion();
@@ -364,8 +327,8 @@ export class ElegirEntradas implements OnInit, OnDestroy {
 
     if (!idParaLiberar) return;
 
-    const userToken = this.storageService.getAuthToken();
-    this.reservasService.liberar(idParaLiberar, userToken).subscribe(() => {
+    const tokenTurno = this.estadoCola?.tokenTurno || '';
+    this.reservasService.liberar(idParaLiberar, tokenTurno).subscribe(() => {
       this.idsEntradasSeleccionadas.delete(idParaLiberar);
       if (this.idsEntradasSeleccionadas.size === 0) {
         this.limpiarEstadoSeleccion();
@@ -402,7 +365,8 @@ export class ElegirEntradas implements OnInit, OnDestroy {
     this.router.navigate(['/comprar'], {
       queryParams: {
         idEspectaculo: idEspectaculo,
-        idsEntradas: idsEntradas.join(',')
+        idsEntradas: idsEntradas.join(','),
+        tokenTurno: this.estadoCola?.tokenTurno
       }
     });
   }
@@ -412,7 +376,7 @@ export class ElegirEntradas implements OnInit, OnDestroy {
     if (this.infoCompra?.modoSeleccion !== 'PRECISA') return;
 
     this.plantasDisponibles = this.mapService.getPlantasDisponibles(this.entradasMapa);
-    
+
     if (this.plantasDisponibles.length > 0) {
       this.selectedPlanta = this.plantasDisponibles[0];
       this.onPlantaChange();
@@ -421,7 +385,7 @@ export class ElegirEntradas implements OnInit, OnDestroy {
 
   onPlantaChange() {
     this.filasDisponibles = this.mapService.getFilasDisponibles(this.entradasMapa, Number(this.selectedPlanta));
-    
+
     if (this.filasDisponibles.length > 0) {
       this.selectedFila = this.filasDisponibles[0];
       this.onFilaChange();
@@ -433,8 +397,8 @@ export class ElegirEntradas implements OnInit, OnDestroy {
 
   onFilaChange() {
     this.asientosFila = this.mapService.getTodosAsientosFila(
-      this.entradasMapa, 
-      Number(this.selectedPlanta), 
+      this.entradasMapa,
+      Number(this.selectedPlanta),
       Number(this.selectedFila)
     );
   }
@@ -448,10 +412,10 @@ export class ElegirEntradas implements OnInit, OnDestroy {
   }
 
   private seleccionarEntrada(idEntrada: number) {
-    const userToken = this.storageService.getAuthToken();
+    const tokenTurno = this.estadoCola?.tokenTurno || '';
     const sessionId = 'session-' + Date.now();
 
-    this.reservasService.reservar(idEntrada, userToken).subscribe({
+    this.reservasService.reservar(idEntrada, tokenTurno).subscribe({
       next: () => {
         this.idsEntradasSeleccionadas.add(idEntrada);
         this.guardarEstadoSeleccion();
@@ -468,17 +432,17 @@ export class ElegirEntradas implements OnInit, OnDestroy {
   }
 
   private deseleccionarEntrada(idEntrada: number) {
-    const userToken = this.storageService.getAuthToken();
-    this.reservasService.liberar(idEntrada, userToken).subscribe({
+    const tokenTurno = this.estadoCola?.tokenTurno || '';
+    this.reservasService.liberar(idEntrada, tokenTurno).subscribe({
       next: () => {
         this.idsEntradasSeleccionadas.delete(idEntrada);
-        
+
         if (this.idsEntradasSeleccionadas.size === 0) {
           this.limpiarEstadoSeleccion();
         } else {
           this.guardarEstadoSeleccion();
         }
-        
+
         this.cdr.detectChanges();
         // Refrescamos disponibilidad en el formulario
         this.onFilaChange();

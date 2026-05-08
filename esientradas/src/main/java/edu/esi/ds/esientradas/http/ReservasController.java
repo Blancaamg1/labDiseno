@@ -26,9 +26,9 @@ public class ReservasController {
     @PutMapping("/reservar")
     public Long reservar(HttpSession session,
                          @RequestParam Long idEntrada,
-                         @RequestParam String userToken) {
+                         @RequestParam(required = false) String tokenTurno) {
 
-        Long precioEntrada = this.service.reservar(idEntrada, session.getId(), userToken);
+        Long precioEntrada = this.service.reservar(idEntrada, session.getId(), tokenTurno);
         Long precioTotal = (Long) session.getAttribute("precioTotal");
 
         if (precioTotal == null) {
@@ -43,8 +43,8 @@ public class ReservasController {
     }
 
     @PutMapping("/liberar")
-    public void liberar(@RequestParam Long idEntrada, @RequestParam String userToken) {
-        this.service.liberar(idEntrada, userToken);
+    public void liberar(@RequestParam Long idEntrada, @RequestParam(required = false) String tokenTurno) {
+        this.service.liberar(idEntrada, tokenTurno);
     }
 
     @GetMapping("/infoCompra")
