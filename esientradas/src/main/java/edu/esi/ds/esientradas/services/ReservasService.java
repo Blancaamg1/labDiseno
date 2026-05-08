@@ -50,7 +50,8 @@ public class ReservasService {
     @Transactional
     public Long reservar(Long idEntrada, String sessionId, String tokenTurno) {
         if (this.tokenDao.countBySessionId(sessionId) >= 12) {
-            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "No se permite reservar más de 12 entradas simultáneamente.");
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST,
+                    "No se permite reservar más de 12 entradas simultáneamente.");
         }
 
         Entrada entrada = this.entradaDao.findById(idEntrada)
@@ -91,12 +92,14 @@ public class ReservasService {
             return;
         }
 
-        if (tokenTurno == null || tokenTurno.isBlank()) {
-            throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Se requiere token de turno para reservar");
+        if (tokenTurno == null || tokenTurno.isBlank() || "null".equals(tokenTurno)) {
+            String msg = "Se requiere turno para el espectáculo de " + (espectaculo.getArtista() != null ? espectaculo.getArtista() : espectaculo.getId());
+            throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, msg);
         }
 
         ColaVirtual cola = this.colaVirtualDao.findByTokenTurno(tokenTurno)
-                .orElseThrow(() -> new ResponseStatusException(HttpStatus.FORBIDDEN, "No estas en la cola virtual de este espectaculo"));
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.FORBIDDEN,
+                        "No estas en la cola virtual de este espectaculo"));
 
         if (!espectaculo.getId().equals(cola.getIdEspectaculo())) {
             throw new ResponseStatusException(HttpStatus.FORBIDDEN, "No estas en la cola virtual de este espectaculo");
@@ -105,15 +108,13 @@ public class ReservasService {
         if (!"ACTIVO".equals(cola.getEstado())) {
             throw new ResponseStatusException(
                     HttpStatus.FORBIDDEN,
-                    "Aun no ha llegado tu turno para comprar"
-            );
+                    "Aun no ha llegado tu turno para comprar");
         }
 
         if (cola.getFechaFinTurno() == null || cola.getFechaFinTurno().isBefore(LocalDateTime.now())) {
             throw new ResponseStatusException(
                     HttpStatus.FORBIDDEN,
-                    "Tu turno de compra ha caducado"
-            );
+                    "Tu turno de compra ha caducado");
         }
     }
 
@@ -224,7 +225,7 @@ public class ReservasService {
     public void liberarEntradasExpiradas() {
         Long tiempoExpiracion = System.currentTimeMillis() - 300000;
         List<Token> tokensExpirados = this.tokenDao.findByHoraLessThan(tiempoExpiracion);
-        
+
         for (Token token : tokensExpirados) {
             Entrada entrada = token.getEntrada();
             if (entrada != null) {
@@ -240,7 +241,8 @@ public class ReservasService {
     @Transactional
     public void finalizarVenta(List<Long> idsEntradas, Long idEspectaculo) {
         if (idsEntradas != null && idsEntradas.size() > 12) {
-            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "No se pueden comprar más de 12 entradas por transacción.");
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST,
+                    "No se pueden comprar más de 12 entradas por transacción.");
         }
 
         List<Entrada> entradas = this.entradaDao.findAllById(idsEntradas);

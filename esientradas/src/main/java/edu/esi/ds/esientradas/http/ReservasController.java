@@ -27,17 +27,16 @@ public class ReservasController {
     public Long reservar(HttpSession session,
                          @RequestParam Long idEntrada,
                          @RequestParam(required = false) String tokenTurno) {
-
+        
+        // Llamamos al servicio.
         Long precioEntrada = this.service.reservar(idEntrada, session.getId(), tokenTurno);
-        Long precioTotal = (Long) session.getAttribute("precioTotal");
+        
+        // Manejo seguro del precio en sesión
+        Object precioTotalObj = session.getAttribute("precioTotal");
+        long precioTotal = (precioTotalObj instanceof Number) ? ((Number) precioTotalObj).longValue() : 0L;
 
-        if (precioTotal == null) {
-            precioTotal = precioEntrada;
-            session.setAttribute("precioTotal", precioTotal);
-        } else {
-            precioTotal = precioTotal + precioEntrada;
-            session.setAttribute("precioTotal", precioTotal);
-        }
+        precioTotal += precioEntrada;
+        session.setAttribute("precioTotal", precioTotal);
 
         return precioTotal;
     }
