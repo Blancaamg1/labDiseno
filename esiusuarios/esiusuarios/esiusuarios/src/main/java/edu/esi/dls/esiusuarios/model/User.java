@@ -13,6 +13,7 @@ import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.OneToMany;
+import jakarta.persistence.PrePersist;
 import jakarta.persistence.Table;
 
 import org.springframework.security.core.GrantedAuthority;
@@ -39,11 +40,19 @@ public class User implements UserDetails {
     @Column(nullable = false, unique = true, length = 120)
     private String token;
 
-    @Column(nullable = false, length = 20, columnDefinition = "varchar(20) default 'USER'")
-    @Enumerated(EnumType.STRING) 
-    private Role role;
+    @Column(nullable = false, length = 20)
+    @Enumerated(EnumType.STRING)
+    private Role role = Role.USER;
+
     public enum Role {
         USER, ADMIN
+    }
+
+    @PrePersist
+    public void prePersist() {
+        if (this.role == null) {
+            this.role = Role.USER;
+        }
     }
 
     private Long validationDate;
@@ -104,11 +113,11 @@ public class User implements UserDetails {
 
     public String getToken() {
         return token;
-    }   
+    }
 
     public void setToken(String token) {
         this.token = token;
-    }   
+    }
 
     public Long getId() {
         return id;
