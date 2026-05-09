@@ -85,6 +85,7 @@ public class UserService {
             dto.setId(u.getId());
             dto.setName(u.getName());
             dto.setEmail(u.getEmail());
+            dto.setRole(u.getRole() != null ? u.getRole().name() : "USER");
             return dto;
         }).orElse(null);
     }

@@ -5,8 +5,17 @@ public class DtoUsuarioInfo {
     private Long id;
     private String name;
     private String email;
+    private String role;
 
     public DtoUsuarioInfo() {
+    }
+
+    public String getRole() {
+        return role;
+    }
+
+    public void setRole(String role) {
+        this.role = role;
     }
 
     public Long getId() {

@@ -21,6 +21,11 @@ import org.springframework.web.server.ResponseStatusException;
 import edu.esi.dls.esiusuarios.dto.UserInfoDto;
 import edu.esi.dls.esiusuarios.services.LoginAttemptService;
 import edu.esi.dls.esiusuarios.services.UserService;
+import edu.esi.dls.esiusuarios.services.CustomUserDetailsService;
+import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.security.core.userdetails.UserDetails;
+import org.springframework.security.web.context.HttpSessionSecurityContextRepository;
 
 @RestController /* Usado para que los métodos devuelvan datos directamente al frontend */
 @CrossOrigin(origins = "http://localhost:4200") /* Permite que angular pueda llamar a este frontend */
@@ -32,6 +37,9 @@ public class UserController {
 
     @Autowired
     private LoginAttemptService loginAttemptService;
+
+    @Autowired
+    private CustomUserDetailsService customUserDetailsService;
 
     @PostMapping("/login") /* Recibe del frontend un JSON con el usuario y contraseña */
     public HashMap<String, Object> login(HttpSession session, HttpServletRequest request,
@@ -61,6 +69,13 @@ public class UserController {
 
         /* Si el login es correcto, se guarda el userId dentro de la sesión HTTP */
         session.setAttribute("userId", userId);
+
+        /* Integrar con Spring Security */
+        UserDetails userDetails = customUserDetailsService.loadUserByUsername(name);
+        UsernamePasswordAuthenticationToken authentication = 
+            new UsernamePasswordAuthenticationToken(userDetails, null, userDetails.getAuthorities());
+        SecurityContextHolder.getContext().setAuthentication(authentication);
+        session.setAttribute(HttpSessionSecurityContextRepository.SPRING_SECURITY_CONTEXT_KEY, SecurityContextHolder.getContext());
 
         HashMap<String, Object> result = new HashMap<>();
         result.put("userId", userId);

@@ -5,8 +5,17 @@ public class UserInfoDto {
     private Long id;
     private String name;
     private String email;
+    private String role;
 
     public UserInfoDto() {
+    }
+
+    public String getRole() {
+        return role;
+    }
+
+    public void setRole(String role) {
+        this.role = role;
     }
 
     public Long getId() {
