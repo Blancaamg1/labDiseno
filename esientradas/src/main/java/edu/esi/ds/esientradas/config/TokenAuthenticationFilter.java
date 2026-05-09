@@ -20,6 +20,9 @@ public class TokenAuthenticationFilter extends OncePerRequestFilter {
 
     private final UsuarioService usuarioService;
 
+    private static final String UUID_REGEX =
+            "^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$";
+
     public TokenAuthenticationFilter(UsuarioService usuarioService) {
         this.usuarioService = usuarioService;
     }
@@ -28,40 +31,43 @@ public class TokenAuthenticationFilter extends OncePerRequestFilter {
     protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain filterChain)
             throws ServletException, IOException {
 
-        // 1. Obtener el token de la cabecera (Angular debe enviarlo como "Authorization: Bearer <token>" o similar)
         String authHeader = request.getHeader("Authorization");
-        String token = null;
 
-        if (authHeader != null && authHeader.startsWith("Bearer ")) {
-            token = authHeader.substring(7);
-        } else if (authHeader != null) {
-            token = authHeader; // Por si mandan el token a pelo
+        if (authHeader == null || !authHeader.startsWith("Bearer ")) {
+            filterChain.doFilter(request, response);
+            return;
         }
 
-        if (token != null && !token.isBlank()) {
-            try {
-                // 2. Preguntar a esiusuarios si el token es válido
-                DtoUsuarioInfo userInfo = usuarioService.getUserInfo(token);
+        String token = authHeader.substring(7);
 
-                if (userInfo != null) {
-                    // 3. Obtener el rol que nos devuelve esiusuarios (por defecto USER si no viene)
-                    String role = userInfo.getRole() != null ? userInfo.getRole() : "USER";
+        if (token.isBlank() || !isValidTokenFormat(token)) {
+            SecurityContextHolder.clearContext();
+            filterChain.doFilter(request, response);
+            return;
+        }
 
-                    // 4. Inyectarlo en Spring Security
-                    UsernamePasswordAuthenticationToken authentication = new UsernamePasswordAuthenticationToken(
-                            userInfo.getName(), 
-                            null, 
-                            Collections.singletonList(new SimpleGrantedAuthority("ROLE_" + role)));
-                    
-                    SecurityContextHolder.getContext().setAuthentication(authentication);
-                }
-            } catch (Exception ex) {
-                // Token inválido o esiusuarios caído, ignoramos y Spring Security devolverá 401 si la ruta está protegida
-                SecurityContextHolder.clearContext();
+        try {
+            DtoUsuarioInfo userInfo = usuarioService.getUserInfo(token);
+
+            if (userInfo != null) {
+                String role = userInfo.getRole() != null ? userInfo.getRole() : "USER";
+
+                UsernamePasswordAuthenticationToken authentication = new UsernamePasswordAuthenticationToken(
+                        userInfo.getName(),
+                        null,
+                        Collections.singletonList(new SimpleGrantedAuthority("ROLE_" + role)));
+
+                SecurityContextHolder.getContext().setAuthentication(authentication);
             }
+
+        } catch (Exception ex) {
+            SecurityContextHolder.clearContext();
         }
 
-        // Continuar con la cadena de filtros
         filterChain.doFilter(request, response);
+    }
+
+    private boolean isValidTokenFormat(String token) {
+        return token.matches(UUID_REGEX);
     }
 }

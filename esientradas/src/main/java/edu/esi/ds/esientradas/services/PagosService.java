@@ -22,6 +22,7 @@ import edu.esi.ds.esientradas.dto.DtoConfirmarPagoRequest;
 import edu.esi.ds.esientradas.dto.DtoConfirmarPagoResponse;
 import edu.esi.ds.esientradas.dto.DtoUsuarioInfo;
 import edu.esi.ds.esientradas.model.Pago;
+import jakarta.annotation.PostConstruct;
 
 @Service
 public class PagosService {
@@ -38,14 +39,21 @@ public class PagosService {
     @Autowired
     private PDFService pdfService;
 
-    private static final String FALLBACK_STRIPE_SECRET_KEY = "";
-
     @Autowired
     private PagoDao pagoDao;
 
-    @Value("${stripe.secret.key:}")
+    @Value("${stripe.secret.key}")
     private String stripeSecretKey;
 
+    @PostConstruct
+    public void init() {
+        if (stripeSecretKey == null || stripeSecretKey.isBlank()) {
+            throw new IllegalStateException(
+                "La propiedad 'stripe.secret.key' es obligatoria y no está configurada"
+            );
+        }
+    }
+    
     public String prepararPago(Long centimos) throws StripeException {
         Stripe.apiKey = this.getStripeSecretKey();
 
@@ -208,16 +216,7 @@ public class PagosService {
         return this.pagoDao.findById(idPago).orElse(null);
     }
 
-    private String getStripeSecretKey() {
-        if (this.stripeSecretKey != null && !this.stripeSecretKey.isBlank()) {
-            return this.stripeSecretKey;
-        }
-
-        String envValue = System.getenv("STRIPE_SECRET_KEY");
-        if (envValue != null && !envValue.isBlank()) {
-            return envValue;
-        }
-
-        return FALLBACK_STRIPE_SECRET_KEY;
+        private String getStripeSecretKey() {
+        return this.stripeSecretKey;
     }
 }
