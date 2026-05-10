@@ -8,6 +8,7 @@ import { ElegirEntradasStorageService } from './elegir-entradas-storage.service'
 import { ElegirEntradasMapService } from './elegir-entradas-map.service';
 import { FormsModule } from '@angular/forms';
 import { ColaEstadoDto, EntradaMapaDto, ZonaResumen } from './elegir-entradas.model';
+import { AuthService } from '../auth.service';
 
 @Component({
   selector: 'app-elegir-entradas',
@@ -56,7 +57,8 @@ export class ElegirEntradas implements OnInit, OnDestroy {
     private router: Router,
     private cdr: ChangeDetectorRef,
     private storageService: ElegirEntradasStorageService,
-    private mapService: ElegirEntradasMapService
+    private mapService: ElegirEntradasMapService,
+    private authService: AuthService
   ) { }
 
   ngOnInit(): void {
@@ -66,12 +68,11 @@ export class ElegirEntradas implements OnInit, OnDestroy {
         const idStr = params.get('idEspectaculo');
         if (idStr) {
           this.idEspectaculoActual = Number(idStr);
-          this.idsEntradasSeleccionadas.clear();
           this.cargarDatos(this.idEspectaculoActual);
+          // Ahora idEspectaculoActual ya tiene valor → la clave de localStorage es correcta
+          this.verificarContadorExistente();
         }
       });
-
-    this.verificarContadorExistente();
   }
 
   ngOnDestroy(): void {
@@ -206,6 +207,9 @@ export class ElegirEntradas implements OnInit, OnDestroy {
             this.inicializarFormularioPrecisa();
           }
 
+          const idsGuardados = this.storageService.loadSelectionState(this.idEspectaculoActual);
+          idsGuardados.forEach((id: number) => this.idsEntradasSeleccionadas.add(id));
+
           this.cdr.detectChanges();
         },
         error: (err) => {
@@ -299,15 +303,24 @@ export class ElegirEntradas implements OnInit, OnDestroy {
       return;
     }
 
-    const entradasDisponibles = this.entradasMapa.filter(e => e.zona === zona && e.disponible && !this.idsEntradasSeleccionadas.has(e.idEntrada));
+    const entradasDisponibles = this.entradasMapa.filter(
+      e => e.zona === zona && e.disponible && !this.idsEntradasSeleccionadas.has(e.idEntrada)
+    );
     if (entradasDisponibles.length === 0) {
       alert('No hay más entradas disponibles en esta zona.');
       return;
     }
 
     const idEntrada = entradasDisponibles[0].idEntrada;
-    const tokenTurno = this.estadoCola?.tokenTurno || '';
 
+    if (!this.estaLogueado()) {
+      this.idsEntradasSeleccionadas.add(idEntrada);
+      this.guardarEstadoSeleccion();
+      this.cdr.detectChanges();
+      return;
+    }
+
+    const tokenTurno = this.estadoCola?.tokenTurno || '';
     this.reservasService.reservar(idEntrada, tokenTurno).subscribe(() => {
       this.idsEntradasSeleccionadas.add(idEntrada);
       this.registrarReservaLocal();
@@ -362,6 +375,15 @@ export class ElegirEntradas implements OnInit, OnDestroy {
       return;
     }
 
+    if (!this.estaLogueado()) {
+      this.router.navigate(['/login'], {
+        queryParams: {
+          returnUrl: `/elegirEntradas?idEspectaculo=${idEspectaculo}`
+        }
+      });
+      return;
+    }
+
     this.router.navigate(['/comprar'], {
       queryParams: {
         idEspectaculo: idEspectaculo,
@@ -412,16 +434,21 @@ export class ElegirEntradas implements OnInit, OnDestroy {
   }
 
   private seleccionarEntrada(idEntrada: number) {
-    const tokenTurno = this.estadoCola?.tokenTurno || '';
-    const sessionId = 'session-' + Date.now();
+    if (!this.estaLogueado()) {
+      this.idsEntradasSeleccionadas.add(idEntrada);
+      this.guardarEstadoSeleccion();
+      this.cdr.detectChanges();
+      this.onFilaChange();
+      return;
+    }
 
+    const tokenTurno = this.estadoCola?.tokenTurno || '';
     this.reservasService.reservar(idEntrada, tokenTurno).subscribe({
       next: () => {
         this.idsEntradasSeleccionadas.add(idEntrada);
         this.guardarEstadoSeleccion();
         this.registrarReservaLocal();
         this.cdr.detectChanges();
-        // Refrescamos disponibilidad en el formulario
         this.onFilaChange();
       },
       error: (err) => {
@@ -431,20 +458,33 @@ export class ElegirEntradas implements OnInit, OnDestroy {
     });
   }
 
+  private estaLogueado(): boolean {
+    return !!localStorage.getItem('authToken');
+  }
+
   private deseleccionarEntrada(idEntrada: number) {
+    if (!this.estaLogueado()) {
+      this.idsEntradasSeleccionadas.delete(idEntrada);
+      if (this.idsEntradasSeleccionadas.size === 0) {
+        this.limpiarEstadoSeleccion();
+      } else {
+        this.guardarEstadoSeleccion();
+      }
+      this.cdr.detectChanges();
+      this.onFilaChange();
+      return;
+    }
+
     const tokenTurno = this.estadoCola?.tokenTurno || '';
     this.reservasService.liberar(idEntrada, tokenTurno).subscribe({
       next: () => {
         this.idsEntradasSeleccionadas.delete(idEntrada);
-
         if (this.idsEntradasSeleccionadas.size === 0) {
           this.limpiarEstadoSeleccion();
         } else {
           this.guardarEstadoSeleccion();
         }
-
         this.cdr.detectChanges();
-        // Refrescamos disponibilidad en el formulario
         this.onFilaChange();
       }
     });

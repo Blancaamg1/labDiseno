@@ -2,14 +2,14 @@ import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { EspectaculosService } from './espectaculos.service';
-import { Router,RouterModule } from '@angular/router';
+import { Router, RouterModule } from '@angular/router';
 import { retry } from 'rxjs';
 import { AuthService } from '../auth.service';
 
 @Component({
   selector: 'app-espectaculos',
-  imports: [CommonModule, FormsModule,RouterModule],
-  standalone: true,              
+  imports: [CommonModule, FormsModule, RouterModule],
+  standalone: true,
   templateUrl: './espectaculos.html',
   styleUrl: './espectaculos.css',
 })
@@ -46,7 +46,7 @@ export class Espectaculos implements OnInit {
     }
   }
 
-  getEscenarios(){
+  getEscenarios() {
     this.espectaculosService.getEscenarios().pipe(retry({ count: 2, delay: 800 })).subscribe(
       (response: any) => {
         this.escenariosOriginales = Array.isArray(response)
@@ -61,14 +61,14 @@ export class Espectaculos implements OnInit {
     )
   }
 
-  getEspectaculos(escenario : any){
+  getEspectaculos(escenario: any) {
     this.espectaculosService.getEspectaculos(escenario.id).pipe(retry({ count: 2, delay: 800 })).subscribe(
-      (response : any) => {
+      (response: any) => {
         escenario.espectaculos = Array.isArray(response) ? response : [];
         escenario.espectaculos.forEach((espectaculo: any) => this.getNumeroDeEntradas(espectaculo));
         this.aplicarFiltros();
       },
-      (error:any) => {
+      (error: any) => {
         console.error('Error al obtener los escenarios', error);
       }
     )
@@ -147,19 +147,19 @@ export class Espectaculos implements OnInit {
   );
   } */
 
-  getNumeroDeEntradas(espectaculo: any){
-  this.espectaculosService.getNumeroDeEntradasComoDto(espectaculo.id).pipe(retry({ count: 1, delay: 600 })).subscribe(
-    (response: any) => {
-      espectaculo.entradas = response;
-      this.aplicarFiltros();
-    },
-    (error:any) => {
-      console.error('Error al obtener las entradas', error);
-    }
-  );
-  } 
+  getNumeroDeEntradas(espectaculo: any) {
+    this.espectaculosService.getNumeroDeEntradasComoDto(espectaculo.id).pipe(retry({ count: 1, delay: 600 })).subscribe(
+      (response: any) => {
+        espectaculo.entradas = response;
+        this.aplicarFiltros();
+      },
+      (error: any) => {
+        console.error('Error al obtener las entradas', error);
+      }
+    );
+  }
 
-  irAComprarEntradas(espectaculo: any){
+  irAComprarEntradas(espectaculo: any) {
     // Se pasa el id del espectaculo en la URL para recuperarlo en CompraComponent.
     this.router.navigate(['/comprar'], {
       queryParams: { idEspectaculo: espectaculo?.id }
@@ -167,20 +167,20 @@ export class Espectaculos implements OnInit {
   }
 
   irAElegirEntradas(espectaculo: any): void {
-  if (!espectaculo?.id) {
-    return;
+    if (!espectaculo?.id) {
+      return;
+    }
+
+    this.router.navigate(['/elegirEntradas'], {
+      queryParams: { idEspectaculo: espectaculo.id }
+    });
   }
 
-  this.router.navigate(['/elegirEntradas'], {
-    queryParams: { idEspectaculo: espectaculo.id }
-  });
-} 
-
-   login() {
-  this.router.navigate(['/login'], {
-    queryParams: { returnUrl: '/espectaculos' }
-  });
-}
+  login() {
+    this.router.navigate(['/login'], {
+      queryParams: { returnUrl: '/espectaculos' }
+    });
+  }
 
   showUserMenu = false;
 

@@ -8,7 +8,7 @@
       <div class="contador-reserva" *ngIf="tiempoRestante > 0" [ngClass]="{'alerta': tiempoRestante <= 60}">
         Tiempo restante para pagar: <strong>{{ tiempoFormateado }}</strong>
       </div>
-      <div class="contador-expirado" *ngIf="tiempoRestante === 0">
+      <div class="contador-expirado" *ngIf="tiempoRestante === 0 && isProcessing">
         El tiempo de reserva ha expirado. Vuelve a iniciar el proceso de compra.
       </div>
 

@@ -31,8 +31,8 @@ export class Login {
     private router: Router,
     private route: ActivatedRoute,
     private cdr: ChangeDetectorRef
-  ) {}
-  
+  ) { }
+
   togglePassword() {
     this.mostrarPassword = !this.mostrarPassword;
   }

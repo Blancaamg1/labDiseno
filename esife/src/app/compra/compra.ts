@@ -107,9 +107,17 @@ export class CompraComponent implements OnInit, AfterViewInit, OnDestroy {
         this.cardError = 'El tiempo de reserva ha expirado. Las entradas han sido liberadas.';
         this.isProcessing = true;
       }
+    } else if (this.idsEntradasSeleccionadas.length > 0) {
+      // El usuario acaba de llegar desde la selección sin expiración guardada:
+      // iniciamos un timer fresco de 5 minutos.
+      const nuevaExpiracion = Date.now() + 300000;
+      this.storageService.setReservaExpiracion(nuevaExpiracion, this.idEspectaculo);
+      this.tiempoRestante = 300;
+      this.iniciarContador();
     } else {
-      this.tiempoRestante = 0;
-      this.clearPersistedSelectionOnly();
+      // No hay entradas ni expiración: no mostramos el mensaje de expirado,
+      // simplemente dejamos el contador en su valor inicial (300).
+      this.tiempoRestante = 300;
     }
   }
 
@@ -271,10 +279,6 @@ export class CompraComponent implements OnInit, AfterViewInit, OnDestroy {
             this.ngZone.run(() => {
               alert(serviceResponse?.mensaje || 'Pago confirmado');
               this.clearPersistedReservationState();
-
-              if (serviceResponse?.pagoId) {
-                window.open(`http://localhost:8080/pagos/${serviceResponse.pagoId}/pdf`, '_blank');
-              }
               window.location.href = '/espectaculos';
             });
           },
