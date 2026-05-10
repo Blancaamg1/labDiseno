@@ -21,13 +21,13 @@ public class ColaVirtualController {
 
     @GetMapping("/estado")
     public DtoColaEstado consultarEstado(@RequestParam Long idEspectaculo,
-                                         @RequestParam String tokenTurno) {
+            @RequestParam String tokenTurno) {
         return this.colaVirtualService.consultarEstado(idEspectaculo, tokenTurno);
     }
 
     @PostMapping("/salir")
     public void salirDeCola(@RequestParam Long idEspectaculo,
-                            @RequestParam String tokenTurno) {
+            @RequestParam String tokenTurno) {
         this.colaVirtualService.salirDeCola(idEspectaculo, tokenTurno);
     }
 }
