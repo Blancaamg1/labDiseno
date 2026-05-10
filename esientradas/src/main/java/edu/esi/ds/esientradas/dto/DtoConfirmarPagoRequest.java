@@ -14,6 +14,15 @@ public class DtoConfirmarPagoRequest {
     private List<Long> idsEntradas;
 
     private String tokenTurno;
+    private String tokenReserva;
+
+    public String getTokenReserva() {
+        return tokenReserva;
+    }
+
+    public void setTokenReserva(String tokenReserva) {
+        this.tokenReserva = tokenReserva;
+    }
 
     public String getTokenTurno() {
         return tokenTurno;

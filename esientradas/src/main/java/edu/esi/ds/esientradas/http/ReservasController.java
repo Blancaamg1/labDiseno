@@ -10,6 +10,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
+import edu.esi.ds.esientradas.dto.DtoReserva;
 import edu.esi.ds.esientradas.dto.DtoCompraInfo;
 import edu.esi.ds.esientradas.dto.DtoEntradaMapa;
 import edu.esi.ds.esientradas.services.ReservasService;
@@ -24,12 +25,16 @@ public class ReservasController {
     private ReservasService service;
 
     @PutMapping("/reservar")
-    public Long reservar(HttpSession session,
-                         @RequestParam Long idEntrada,
-                         @RequestParam(required = false) String tokenTurno) {
+    public DtoReserva reservar(HttpSession session,
+                               @RequestParam Long idEntrada,
+                               @RequestParam(required = false) String tokenReserva,
+                               @RequestParam(required = false) String tokenTurno) {
+        
+        // Si nos envían un tokenReserva, lo usamos. Si no, usamos el de la sesión.
+        String idParaReserva = (tokenReserva != null && !tokenReserva.isBlank()) ? tokenReserva : session.getId();
         
         // Llamamos al servicio.
-        Long precioEntrada = this.service.reservar(idEntrada, session.getId(), tokenTurno);
+        Long precioEntrada = this.service.reservar(idEntrada, idParaReserva, tokenTurno);
         
         // Manejo seguro del precio en sesión
         Object precioTotalObj = session.getAttribute("precioTotal");
@@ -38,7 +43,7 @@ public class ReservasController {
         precioTotal += precioEntrada;
         session.setAttribute("precioTotal", precioTotal);
 
-        return precioTotal;
+        return new DtoReserva(idParaReserva, precioTotal);
     }
 
     @PutMapping("/liberar")

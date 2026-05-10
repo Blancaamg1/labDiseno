@@ -14,6 +14,7 @@ export class ElegirEntradasStorageService {
   private readonly entradasSeleccionadasKeyPrefix = 'entradasSeleccionadas';
   private readonly zonaSeleccionadaKeyPrefix = 'zonaSeleccionada';
   private readonly idEntradaZonaReservadaKeyPrefix = 'idEntradaZonaReservada';
+  private readonly tokenReservaKeyPrefix = 'tokenReserva';
 
   isAvailable(): boolean {
     return typeof localStorage !== 'undefined';
@@ -90,5 +91,21 @@ export class ElegirEntradasStorageService {
   clearAllReservationState(idEspectaculo?: number | null): void {
     this.clearReservaExpiracion(idEspectaculo);
     this.clearSelectionState(idEspectaculo);
+    this.clearTokenReserva(idEspectaculo);
+  }
+
+  setTokenReserva(token: string, idEspectaculo?: number | null): void {
+    if (!this.isAvailable()) return;
+    localStorage.setItem(this.buildKey(this.tokenReservaKeyPrefix, idEspectaculo), token);
+  }
+
+  getTokenReserva(idEspectaculo?: number | null): string | null {
+    if (!this.isAvailable()) return null;
+    return localStorage.getItem(this.buildKey(this.tokenReservaKeyPrefix, idEspectaculo));
+  }
+
+  clearTokenReserva(idEspectaculo?: number | null): void {
+    if (!this.isAvailable()) return;
+    localStorage.removeItem(this.buildKey(this.tokenReservaKeyPrefix, idEspectaculo));
   }
 }

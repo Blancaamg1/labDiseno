@@ -60,12 +60,9 @@ export class EspectaculosService {
     );
   }
 
-  reservar(idEntrada: number, tokenTurno: string) {
-    return this.http.put(
-      `http://localhost:8080/reservas/reservar?idEntrada=${idEntrada}&tokenTurno=${tokenTurno}`,
-      {},
-      { headers: this.authHeaders() }
-    );
+  reservar(idEntrada: number, tokenTurno: string, tokenReserva: string = '') {
+    const url = `http://localhost:8080/reservas/reservar?idEntrada=${idEntrada}&tokenTurno=${tokenTurno}&tokenReserva=${tokenReserva}`;
+    return this.http.put<any>(url, {}, { headers: this.authHeaders() });
   }
 
   liberar(idEntrada: number, tokenTurno: string) {

@@ -22,6 +22,7 @@ export class ElegirEntradas implements OnInit, OnDestroy {
   infoCompra: any;
   entradasMapa: EntradaMapaDto[] = [];
   idEspectaculoActual: number | null = null;
+  tokenReserva: string = '';
 
 
   zonas: ZonaResumen[] = [];
@@ -92,6 +93,7 @@ export class ElegirEntradas implements OnInit, OnDestroy {
       const remaining = Math.floor((exp - Date.now()) / 1000);
       if (remaining > 0) {
         this.tiempoRestante = remaining;
+        this.tokenReserva = this.storageService.getTokenReserva(this.idEspectaculoActual) || '';
 
         const ids = this.storageService.loadSelectionState(this.idEspectaculoActual);
         ids.forEach((id: number) => this.idsEntradasSeleccionadas.add(id));
@@ -114,6 +116,7 @@ export class ElegirEntradas implements OnInit, OnDestroy {
       this.intervalId = null;
     }
     this.tiempoRestante = 0;
+    this.tokenReserva = '';
   }
 
   iniciarContadorLocal() {
@@ -172,8 +175,12 @@ export class ElegirEntradas implements OnInit, OnDestroy {
     }, 1000);
   }
 
-  registrarReservaLocal() {
+  registrarReservaLocal(token?: string) {
     if (!this.storageService.isAvailable()) return;
+    if (token) {
+      this.tokenReserva = token;
+      this.storageService.setTokenReserva(token, this.idEspectaculoActual);
+    }
     if (this.storageService.getReservaExpiracion(this.idEspectaculoActual) == null) {
       this.storageService.setReservaExpiracion(Date.now() + 300000, this.idEspectaculoActual);
       this.verificarContadorExistente();
@@ -313,20 +320,14 @@ export class ElegirEntradas implements OnInit, OnDestroy {
 
     const idEntrada = entradasDisponibles[0].idEntrada;
 
-    if (!this.estaLogueado()) {
-      this.idsEntradasSeleccionadas.add(idEntrada);
-      this.guardarEstadoSeleccion();
-      this.cdr.detectChanges();
-      return;
-    }
-
     const tokenTurno = this.estadoCola?.tokenTurno || '';
-    this.reservasService.reservar(idEntrada, tokenTurno).subscribe(() => {
+    this.reservasService.reservar(idEntrada, tokenTurno, this.tokenReserva).subscribe((res: any) => {
       this.idsEntradasSeleccionadas.add(idEntrada);
-      this.registrarReservaLocal();
+      this.registrarReservaLocal(res?.tokenReserva);
       this.guardarEstadoSeleccion();
       this.cdr.detectChanges();
     }, err => {
+      console.error('Error al reservar', err);
       alert('Error al reservar la entrada.');
       this.cargarDatos(this.infoCompra?.idEspectaculo);
     });
@@ -376,10 +377,12 @@ export class ElegirEntradas implements OnInit, OnDestroy {
     }
 
     if (!this.estaLogueado()) {
+      const idsEntradasStr = idsEntradas.join(',');
+      const tokenTurno = this.estadoCola?.tokenTurno || '';
+      const returnUrl = `/comprar?idEspectaculo=${idEspectaculo}&idsEntradas=${idsEntradasStr}&tokenTurno=${tokenTurno}&tokenReserva=${this.tokenReserva}`;
+
       this.router.navigate(['/login'], {
-        queryParams: {
-          returnUrl: `/elegirEntradas?idEspectaculo=${idEspectaculo}`
-        }
+        queryParams: { returnUrl }
       });
       return;
     }
@@ -388,7 +391,8 @@ export class ElegirEntradas implements OnInit, OnDestroy {
       queryParams: {
         idEspectaculo: idEspectaculo,
         idsEntradas: idsEntradas.join(','),
-        tokenTurno: this.estadoCola?.tokenTurno
+        tokenTurno: this.estadoCola?.tokenTurno,
+        tokenReserva: this.tokenReserva
       }
     });
   }
@@ -434,20 +438,12 @@ export class ElegirEntradas implements OnInit, OnDestroy {
   }
 
   private seleccionarEntrada(idEntrada: number) {
-    if (!this.estaLogueado()) {
-      this.idsEntradasSeleccionadas.add(idEntrada);
-      this.guardarEstadoSeleccion();
-      this.cdr.detectChanges();
-      this.onFilaChange();
-      return;
-    }
-
     const tokenTurno = this.estadoCola?.tokenTurno || '';
-    this.reservasService.reservar(idEntrada, tokenTurno).subscribe({
-      next: () => {
+    this.reservasService.reservar(idEntrada, tokenTurno, this.tokenReserva).subscribe({
+      next: (res: any) => {
         this.idsEntradasSeleccionadas.add(idEntrada);
         this.guardarEstadoSeleccion();
-        this.registrarReservaLocal();
+        this.registrarReservaLocal(res?.tokenReserva);
         this.cdr.detectChanges();
         this.onFilaChange();
       },
