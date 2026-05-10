@@ -25,6 +25,7 @@ import edu.esi.ds.esientradas.model.Entrada;
 import edu.esi.ds.esientradas.model.Escenario;
 import edu.esi.ds.esientradas.model.Espectaculo;
 import edu.esi.ds.esientradas.model.Estado;
+import edu.esi.ds.esientradas.model.Pago;
 import edu.esi.ds.esientradas.model.Precisa;
 import edu.esi.ds.esientradas.model.Token;
 import jakarta.transaction.Transactional;
@@ -239,7 +240,7 @@ public class ReservasService {
     }
 
     @Transactional
-    public void finalizarVenta(List<Long> idsEntradas, Long idEspectaculo) {
+    public void finalizarVenta(List<Long> idsEntradas, Long idEspectaculo, Pago pago) {
         if (idsEntradas != null && idsEntradas.size() > 12) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST,
                     "No se pueden comprar más de 12 entradas por transacción.");
@@ -273,6 +274,7 @@ public class ReservasService {
         for (Entrada entrada : entradas) {
             entrada.setEstado(Estado.VENDIDA);
             entrada.setToken(null);
+            entrada.setPago(pago);
         }
 
         this.entradaDao.saveAll(entradas);

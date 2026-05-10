@@ -153,7 +153,7 @@ public class PagosService {
             }
 
             if (!yaConfirmado) {
-                reservasService.finalizarVenta(request.getIdsEntradas(), request.getIdEspectaculo());
+                reservasService.finalizarVenta(request.getIdsEntradas(), request.getIdEspectaculo(), pago);
 
                 try {
                     if (request.getIdEspectaculo() != null && request.getTokenTurno() != null) {
