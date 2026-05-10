@@ -6,22 +6,14 @@
 
   <div class="navbar-center">
     <a routerLink="/" class="nav-link">Inicio</a>
-    <a routerLink="/espectaculos" class="nav-link">Espectaculos</a>
-    <a routerLink="/espectaculos" class="nav-link">Eventos</a>
-    <a routerLink="/espectaculos" class="nav-link">Contacto</a>
   </div>
-  
+
 
   <div class="navbar-right" *ngIf="loggedUser">
     <div class="user-profile dropdown" (click)="toggleUserMenu()">
-      <img
-        *ngIf="userAvatarUrl"
-        [src]="userAvatarUrl"
-        [alt]="'Avatar de ' + loggedUser"
-        class="user-avatar"
-      />
+      <img *ngIf="userAvatarUrl" [src]="userAvatarUrl" [alt]="'Avatar de ' + loggedUser" class="user-avatar" />
       <span class="user-name">{{ loggedUser }} ▼</span>
-      
+
       <div class="dropdown-menu" *ngIf="showUserMenu">
         <button class="dropdown-item" (click)="cerrarSesion()">Cerrar sesión</button>
         <button class="dropdown-item text-danger" (click)="cancelarCuenta()">Cancelar cuenta</button>
@@ -40,25 +32,14 @@
     <div class="filters-grid">
       <div class="filter-field filter-text">
         <label for="filtroTexto">Buscar evento o escenario</label>
-        <input
-          id="filtroTexto"
-          type="text"
-          name="filtroTexto"
-          [(ngModel)]="filtroTexto"
-          (ngModelChange)="onFiltroChange()"
-          placeholder="Ej. Rock, Auditorio, Teatro..."
-        />
+        <input id="filtroTexto" type="text" name="filtroTexto" [(ngModel)]="filtroTexto"
+          (ngModelChange)="onFiltroChange()" placeholder="Ej. Rock, Auditorio, Teatro..." />
       </div>
 
       <div class="filter-field">
         <label for="filtroFecha">Fecha</label>
-        <input
-          id="filtroFecha"
-          type="date"
-          name="filtroFecha"
-          [(ngModel)]="filtroFecha"
-          (ngModelChange)="onFiltroChange()"
-        />
+        <input id="filtroFecha" type="date" name="filtroFecha" [(ngModel)]="filtroFecha"
+          (ngModelChange)="onFiltroChange()" />
       </div>
 
       <div class="filter-actions">
@@ -96,9 +77,6 @@
             <button type="button" class="btn-compra" (click)="irAElegirEntradas(espectaculo)">
               Entradas
             </button>
-            <small *ngIf="espectaculo.entradas" class="entradas-resumen">
-              {{ espectaculo.entradas.libres }} libres de {{ espectaculo.entradas.total }}
-            </small>
           </div>
         </div>
       </div>

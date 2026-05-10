@@ -86,9 +86,4 @@ public class BusquedaController {
 
         return dtos;
     }
-
-    @GetMapping("/saludar/{nombre}")
-    public String saludar(@PathVariable String nombre, @RequestParam String apellido) {
-        return "Hola " + nombre + " " + apellido + " ,esta es la busqueda de entradas";
-    }
 }

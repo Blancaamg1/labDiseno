@@ -72,4 +72,12 @@ export class EspectaculosService {
       { headers: this.authHeaders() }
     );
   }
+
+  salirDeCola(idEspectaculo: number, tokenTurno: string) {
+    return this.http.post(
+      `http://localhost:8080/cola/salir?idEspectaculo=${idEspectaculo}&tokenTurno=${tokenTurno}`,
+      {},
+      { headers: this.authHeaders() }
+    );
+  }
 }

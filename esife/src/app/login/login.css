@@ -99,6 +99,7 @@ form {
     text-decoration: none;
     font-family: Tahoma, sans-serif;
     font-size: 14px;
+    text-align: center;
 }
 
 .recover-link:hover {

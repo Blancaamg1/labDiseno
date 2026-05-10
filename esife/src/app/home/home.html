@@ -6,13 +6,6 @@
         <span class="home-title">Espectaculos ESI</span>
       </div>
 
-      <div class="home-menu">
-        <a routerLink="/" class="home-link">Inicio</a>
-        <a href="/espectaculos" class="home-link">Espectaculos</a>
-        <a href="/espectaculos" class="home-link">Eventos</a>
-        <a href="/espectaculos" class="home-link">Contacto</a>
-      </div>
-
       <div class="home-actions">
         <ng-container *ngIf="!loggedUser">
           <a routerLink="/login" class="btn-outline">Iniciar sesion</a>
@@ -20,12 +13,7 @@
         </ng-container>
         <ng-container *ngIf="loggedUser">
           <div class="user-profile dropdown" (click)="toggleUserMenu()">
-            <img
-              *ngIf="userAvatarUrl"
-              [src]="userAvatarUrl"
-              [alt]="'Avatar de ' + loggedUser"
-              class="user-avatar"
-            />
+            <img *ngIf="userAvatarUrl" [src]="userAvatarUrl" [alt]="'Avatar de ' + loggedUser" class="user-avatar" />
             <span class="user-name">{{ loggedUser }} ▼</span>
 
             <div class="dropdown-menu" *ngIf="showUserMenu">
@@ -53,7 +41,6 @@
 
       <div class="hero-buttons">
         <a href="/espectaculos" class="btn-solid">Ver espectaculos</a>
-        <a href="/espectaculos" class="btn-solid-alt">Comprar entradas</a>
         <a *ngIf="!loggedUser" routerLink="/login" class="btn-outline">Iniciar sesion</a>
       </div>
     </div>
