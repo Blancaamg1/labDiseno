@@ -1,4 +1,4 @@
-import { Component, OnInit, OnDestroy, DestroyRef, inject, ChangeDetectorRef } from '@angular/core';
+import { Component, OnInit, OnDestroy, DestroyRef, inject, ChangeDetectorRef, HostListener } from '@angular/core';
 import { ActivatedRoute, Router, RouterModule } from '@angular/router';
 import { forkJoin, Observable } from 'rxjs';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
@@ -37,6 +37,7 @@ export class ElegirEntradas implements OnInit, OnDestroy {
 
   tiempoRestante: number = 0;
   intervalId: any = null;
+  private isProceedingToCheckout = false;
 
   // Formulario PRECISA
   plantasDisponibles: number[] = [];
@@ -84,6 +85,19 @@ export class ElegirEntradas implements OnInit, OnDestroy {
     if (this.intervalId) {
       clearInterval(this.intervalId);
       this.intervalId = null;
+    }
+    
+    // Si cerramos el componente y NO vamos a comprar, salimos de la cola
+    if (!this.isProceedingToCheckout && this.estaEnCola && this.estadoCola?.tokenTurno && this.idEspectaculoActual) {
+      this.reservasService.salirDeCola(this.idEspectaculoActual, this.estadoCola.tokenTurno).subscribe();
+    }
+  }
+
+  @HostListener('window:popstate', ['$event'])
+  onPopState(event: any) {
+    // Si el usuario usa el botón de atrás del navegador
+    if (this.estaEnCola && this.estadoCola?.tokenTurno && this.idEspectaculoActual) {
+      this.reservasService.salirDeCola(this.idEspectaculoActual, this.estadoCola.tokenTurno).subscribe();
     }
   }
 
@@ -381,12 +395,14 @@ export class ElegirEntradas implements OnInit, OnDestroy {
       const tokenTurno = this.estadoCola?.tokenTurno || '';
       const returnUrl = `/comprar?idEspectaculo=${idEspectaculo}&idsEntradas=${idsEntradasStr}&tokenTurno=${tokenTurno}&tokenReserva=${this.tokenReserva}`;
 
+      this.isProceedingToCheckout = true;
       this.router.navigate(['/login'], {
         queryParams: { returnUrl }
       });
       return;
     }
 
+    this.isProceedingToCheckout = true;
     this.router.navigate(['/comprar'], {
       queryParams: {
         idEspectaculo: idEspectaculo,
